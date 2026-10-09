@@ -1,0 +1,555 @@
+```react
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { 
+    ChevronRight, 
+    ChevronLeft, 
+    Play, 
+    CheckCircle2, 
+    RotateCcw, 
+    Dumbbell, 
+    Clock, 
+    Flame, 
+    Edit3, 
+    Layers, 
+    HeartPulse, 
+    ArrowRight,
+    Sparkles,
+    FileText,
+    Check,
+    Copy,
+    Printer,
+    Minus,
+    Plus,
+    GripVertical,
+    ArrowUp,
+    ArrowDown
+} from 'lucide-react';
+
+const STORAGE_KEY = 'circuit_builder_app_state_v2';
+
+const CATEGORIES = [
+    { key: 'core', title: 'Core', icon: Layers, description: 'Trunk stability and core strength' },
+    { key: 'cardio', title: 'Cardio', icon: HeartPulse, description: 'Heart rate elevation and stamina' },
+    { key: 'push', title: 'Push', icon: Dumbbell, description: 'Chest, shoulders, and triceps focus' },
+    { key: 'pull', title: 'Pull', icon: Flame, description: 'Back, rear delts, and biceps focus' },
+    { key: 'legs', title: 'Legs', icon: Sparkles, description: 'Quads, hamstrings, glutes, and calves' }
+];
+
+const CATEGORY_EXERCISES = {
+    core: [
+        'Plank',
+        'Side Plank',
+        'Side Plank Dips',
+        'Sit-ups',
+        'Crunches',
+        'Russian Twists',
+        'Hanging Leg Raises',
+        'Lying Leg Raises',
+        'Ab Rollouts',
+        'Bicycle Crunches',
+        'Mountain Climbers',
+        'Hollow Body',
+        'V-Ups / Jackknives',
+        'Deadbug',
+        'Bird Dog',
+        'Flutter Kicks',
+        'Woodchoppers',
+        'Dragon Flags',
+        'Toe Touches',
+        'Reverse Crunches',
+        'Windshield Wipers',
+        'Custom Exercise'
+    ],
+    cardio: [
+        'Running',
+        'Skipping Rope',
+        'Rowing',
+        'Air Bike',
+        'Exercise Bike',
+        'Elliptical',
+        'Stair Climber',
+        'Jumping Jacks',
+        'High Knees',
+        'Burpees',
+        'Box Jumps',
+        'Shadow Boxing',
+        'Sprints / Shuttle Runs',
+        'Battle Ropes',
+        'Agility Ladder Drills',
+        'Skater Hops',
+        'Bear Crawls',
+        'Custom Exercise'
+    ],
+    push: [
+        'Push-ups',
+        'Diamond Push-ups',
+        'Pike Push-ups',
+        'Handstand Push-ups',
+        'Bench Press',
+        'Overhead Press',
+        'Chest Flyes',
+        'Dips',
+        'Lateral Raises',
+        'Arnold Press',
+        'Tricep Pushdowns',
+        'Tricep Extensions',
+        'Skull Crushers',
+        'Custom Exercise'
+    ],
+    pull: [
+        'Pull-ups',
+        'Chin-ups',
+        'Bent-over Rows',
+        'Seated Rows',
+        'Single-Arm Rows',
+        'Inverted Rows',
+        'Lat Pulldowns',
+        'Straight-Arm Pulldowns',
+        'Face Pulls',
+        'Bicep Curls',
+        'Hammer Curls',
+        'Preacher Curls',
+        'Shrugs',
+        'Custom Exercise'
+    ],
+    legs: [
+        'Squats',
+        'Lunges',
+        'Walking Lunges',
+        'Reverse Lunges',
+        'Split Squats',
+        'Deadlifts',
+        'Romanian Deadlifts',
+        'Leg Press',
+        'Leg Extensions',
+        'Leg Curls',
+        'Calf Raises',
+        'Step-ups',
+        'Hip Thrusts / Glute Bridges',
+        'Custom Exercise'
+    ]
+};
+
+const RESISTANCE_LEVEL_OPTIONS = ['Kilogrammes (kg)', 'Pounds (lbs)'];
+
+const RESISTANCE_TYPE_OPTIONS = [
+    'Bodyweight',
+    'Bodyweight (Incline)',
+    'Bodyweight (Decline)',
+    'Dumbbell',
+    'Kettlebell',
+    'Barbell',
+    'Resistance Band',
+    'TRX / Suspension',
+    'Cable Machine',
+    'Incline',
+    'Decline',
+    'Plate / Weight Plate',
+    'Smith Machine',
+    'Other Machine'
+];
+
+const INITIAL_EXERCISE_STATE = {
+    exerciseName: '',
+    customExerciseName: '',
+    resistanceLevel: 'Kilogrammes (kg)',
+    resistanceWeightValue: '',
+    resistanceType: 'Bodyweight',
+    targetType: 'reps',
+    targetValue: '10',
+    perSide: false,
+    notes: ''
+};
+
+function MinuteDialSelector({ value, onChange }) {
+    const dialRef = useRef(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    const numVal = parseFloat(value) || 1;
+    const minVal = 0.5;
+    const maxVal = 20;
+
+    const percentage = Math.min(Math.max((numVal - minVal) / (maxVal - minVal), 0), 1);
+    const rotationAngle = percentage * 260 - 130;
+
+    const calculateValFromPointer = useCallback((clientX, clientY) => {
+        if (!dialRef.current) return;
+        const rect = dialRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
+
+        let deg = Math.atan2(dx, -dy) * (180 / Math.PI);
+
+        if (deg < -150) deg = -130;
+        if (deg > 150) deg = 130;
+
+        const clampedDeg = Math.min(Math.max(deg, -130), 130);
+        const normPercentage = (clampedDeg + 130) / 260;
+        
+        let calculatedVal = minVal + normPercentage * (maxVal - minVal);
+        calculatedVal = Math.round(calculatedVal * 2) / 2;
+        calculatedVal = Math.min(Math.max(calculatedVal, minVal), maxVal);
+
+        onChange(String(calculatedVal));
+    }, [onChange, minVal, maxVal]);
+
+    const handlePointerDown = (e) => {
+        e.preventDefault();
+        setIsDragging(true);
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        calculateValFromPointer(clientX, clientY);
+    };
+
+    useEffect(() => {
+        if (!isDragging) return;
+
+        const handlePointerMove = (e) => {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            calculateValFromPointer(clientX, clientY);
+        };
+
+        const handlePointerUp = () => {
+            setIsDragging(false);
+        };
+
+        window.addEventListener('mousemove', handlePointerMove);
+        window.addEventListener('mouseup', handlePointerUp);
+        window.addEventListener('touchmove', handlePointerMove, { passive: false });
+        window.addEventListener('touchend', handlePointerUp);
+
+        return () => {
+            window.removeEventListener('mousemove', handlePointerMove);
+            window.removeEventListener('mouseup', handlePointerUp);
+            window.removeEventListener('touchmove', handlePointerMove);
+            window.removeEventListener('touchend', handlePointerUp);
+        };
+    }, [isDragging, calculateValFromPointer]);
+
+    const handleStep = (step) => {
+        let updated = Math.round((numVal + step) * 2) / 2;
+        if (updated < minVal) updated = minVal;
+        if (updated > 30) updated = 30;
+        onChange(String(updated));
+    };
+
+    return (
+        <div className="flex flex-col items-center justify-center space-y-4 pt-1 pb-2 select-none">
+            <div 
+                ref={dialRef}
+                onMouseDown={handlePointerDown}
+                onTouchStart={handlePointerDown}
+                className={`relative w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-neutral-900 border-4 ${
+                    isDragging ? 'border-orange-500 shadow-orange-950/50' : 'border-neutral-700 hover:border-neutral-600'
+                } shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing touch-none transition-colors duration-150 overflow-hidden group`}
+            >
+                <svg className="absolute inset-0 w-full h-full transform -rotate-90 p-2 pointer-events-none">
+                    <circle
+                        cx="50%"
+                        cy="50%"
+                        r="42%"
+                        className="stroke-neutral-800"
+                        strokeWidth="10"
+                        fill="transparent"
+                    />
+                    <circle
+                        cx="50%"
+                        cy="50%"
+                        r="42%"
+                        className="stroke-orange-600 transition-all duration-75"
+                        strokeWidth="10"
+                        fill="transparent"
+                        strokeDasharray="280"
+                        strokeDashoffset={280 - percentage * 280}
+                        strokeLinecap="round"
+                    />
+                </svg>
+
+                <div 
+                    className="absolute inset-0 flex items-center justify-center transition-transform duration-75 pointer-events-none"
+                    style={{ transform: `rotate(${rotationAngle}deg)` }}
+                >
+                    <div className="w-full h-full relative">
+                        <div className={`absolute top-2.5 left-1/2 -translate-x-1/2 w-5 h-5 sm:w-6 sm:h-6 bg-orange-500 rounded-full shadow-lg border-2 border-white transition-transform ${
+                            isDragging ? 'scale-125 bg-orange-400 ring-4 ring-orange-500/50' : 'group-hover:scale-110'
+                        }`} />
+                    </div>
+                </div>
+
+                <div className="z-10 flex flex-col items-center justify-center text-center p-3 bg-neutral-950/90 rounded-full w-32 h-32 sm:w-36 sm:h-36 border-2 border-neutral-800 shadow-inner pointer-events-none">
+                    <span className="text-3xl sm:text-4xl font-black text-orange-500 leading-none tracking-tight">
+                        {numVal}
+                    </span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 mt-1">
+                        {numVal === 1 ? 'Minute' : 'Minutes'}
+                    </span>
+                    <span className="text-[9px] text-neutral-500 mt-1 font-semibold">
+                        {isDragging ? 'Dragging...' : 'Rotate Knob'}
+                    </span>
+                </div>
+            </div>
+
+            <div className="flex items-center space-x-3 pt-1">
+                <button
+                    type="button"
+                    onClick={() => handleStep(-0.5)}
+                    className="w-10 h-10 bg-neutral-800 hover:bg-neutral-700 active:scale-95 text-orange-500 font-bold rounded-xl border border-neutral-600 flex items-center justify-center transition"
+                    aria-label="Decrease time"
+                >
+                    <Minus size={18} />
+                </button>
+
+                <span className="text-xs font-semibold text-neutral-400 px-2">
+                    0.5m Steps
+                </span>
+
+                <button
+                    type="button"
+                    onClick={() => handleStep(0.5)}
+                    className="w-10 h-10 bg-neutral-800 hover:bg-neutral-700 active:scale-95 text-orange-500 font-bold rounded-xl border border-neutral-600 flex items-center justify-center transition"
+                    aria-label="Increase time"
+                >
+                    <Plus size={18} />
+                </button>
+            </div>
+        </div>
+    );
+}
+
+const getSavedState = (key, fallback) => {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && parsed[key] !== undefined) {
+                return parsed[key];
+            }
+        }
+    } catch (e) {
+        console.error('Failed to read local storage:', e);
+    }
+    return fallback;
+};
+
+export default function App() {
+    const [currentStep, setCurrentStep] = useState(() => getSavedState('currentStep', 0));
+    const [rounds, setRounds] = useState(() => getSavedState('rounds', 3));
+    const [copied, setCopied] = useState(false);
+    const [completedRounds, setCompletedRounds] = useState(() => getSavedState('completedRounds', {}));
+
+    const [categoryOrder, setCategoryOrder] = useState(() => 
+        getSavedState('categoryOrder', ['core', 'cardio', 'push', 'pull', 'legs'])
+    );
+
+    const [workoutData, setWorkoutData] = useState(() => 
+        getSavedState('workoutData', {
+            core: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.core[0] },
+            cardio: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.cardio[0], targetType: 'minutes', targetValue: '1' },
+            push: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.push[0] },
+            pull: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.pull[0] },
+            legs: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.legs[0] }
+        })
+    );
+
+    const [draggedIdx, setDraggedIdx] = useState(null);
+    const touchStartIndex = useRef(null);
+
+    useEffect(() => {
+        try {
+            const stateToSave = {
+                currentStep,
+                rounds,
+                workoutData,
+                completedRounds,
+                categoryOrder
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+        } catch (e) {
+            console.error('Failed to persist state:', e);
+        }
+    }, [currentStep, rounds, workoutData, completedRounds, categoryOrder]);
+
+    const updateCategoryField = (categoryKey, field, value) => {
+        setWorkoutData(prev => ({
+            ...prev,
+            [categoryKey]: {
+                ...prev[categoryKey],
+                [field]: value
+            }
+        }));
+    };
+
+    const handleStartWorkout = () => {
+        setCurrentStep(1);
+    };
+
+    const handleNext = () => {
+        if (currentStep < 5) {
+            setCurrentStep(prev => prev + 1);
+        } else {
+            setCurrentStep(6);
+        }
+    };
+
+    const handleBack = () => {
+        if (currentStep > 0) {
+            setCurrentStep(prev => prev - 1);
+        }
+    };
+
+    const handleReset = () => {
+        setCurrentStep(0);
+        setCompletedRounds({});
+    };
+
+    const moveStation = (index, direction) => {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= categoryOrder.length) return;
+
+        const newOrder = [...categoryOrder];
+        const [movedItem] = newOrder.splice(index, 1);
+        newOrder.splice(targetIndex, 0, movedItem);
+        setCategoryOrder(newOrder);
+    };
+
+    const handleDragStart = (e, index) => {
+        setDraggedIdx(index);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', index);
+    };
+
+    const handleDragOver = (e, index) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = (e, dropIndex) => {
+        e.preventDefault();
+        if (draggedIdx === null || draggedIdx === dropIndex) return;
+
+        const newOrder = [...categoryOrder];
+        const [movedItem] = newOrder.splice(draggedIdx, 1);
+        newOrder.splice(dropIndex, 0, movedItem);
+
+        setCategoryOrder(newOrder);
+        setDraggedIdx(null);
+    };
+
+    const handleTouchStart = (e, index) => {
+        touchStartIndex.current = index;
+        setDraggedIdx(index);
+    };
+
+    const handleTouchMove = (e) => {
+        if (touchStartIndex.current === null) return;
+        const touchY = e.touches[0].clientY;
+        const targetEl = document.elementFromPoint(e.touches[0].clientX, touchY);
+        if (!targetEl) return;
+        const cardEl = targetEl.closest('[data-station-index]');
+        if (cardEl) {
+            const overIndex = parseInt(cardEl.getAttribute('data-station-index'), 10);
+            if (!isNaN(overIndex) && overIndex !== touchStartIndex.current) {
+                const newOrder = [...categoryOrder];
+                const [movedItem] = newOrder.splice(touchStartIndex.current, 1);
+                newOrder.splice(overIndex, 0, movedItem);
+                setCategoryOrder(newOrder);
+                touchStartIndex.current = overIndex;
+                setDraggedIdx(overIndex);
+            }
+        }
+    };
+
+    const handleTouchEnd = () => {
+        touchStartIndex.current = null;
+        setDraggedIdx(null);
+    };
+
+    const handleCopySummary = () => {
+        let text = `CIRCUIT WORKOUT SUMMARY (${rounds} ${rounds === 1 ? 'Round' : 'Rounds'})\n`;
+        text += `==========================================\n\n`;
+
+        categoryOrder.forEach((catKey, index) => {
+            const catObj = CATEGORIES.find(c => c.key === catKey);
+            if (!catObj) return;
+
+            const data = workoutData[catKey];
+            const name = data.exerciseName === 'Custom Exercise' && data.customExerciseName
+                ? data.customExerciseName
+                : data.exerciseName;
+            const isMins = data.targetType === 'minutes';
+            const perSideText = data.perSide ? ' (per side)' : '';
+            const targetText = isMins
+                ? `${data.targetValue} ${data.targetValue === '1' ? 'min' : 'mins'}${perSideText}`
+                : `${data.targetValue} reps${perSideText}`;
+            
+            const isBodyweight = ['Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Incline', 'Decline'].includes(data.resistanceType);
+            const hasWeight = !isBodyweight && data.resistanceWeightValue;
+            const weightText = hasWeight ? ` (${data.resistanceWeightValue} ${data.resistanceLevel.includes('kg') ? 'kg' : 'lbs'})` : '';
+            const resType = data.resistanceType ? ` [${data.resistanceType}]` : '';
+
+            text += `${index + 1}. ${catObj.title.toUpperCase()}: ${name}${resType}${weightText}\n`;
+            text += `   Target: ${targetText}\n`;
+            if (data.notes) {
+                text += `   Notes: ${data.notes}\n`;
+            }
+            text += `\n`;
+        });
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            }).catch(() => {
+                fallbackCopyText(text);
+            });
+        } else {
+            fallbackCopyText(text);
+        }
+    };
+
+    const fallbackCopyText = (text) => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Copy failed', err);
+        }
+        document.body.removeChild(textarea);
+    };
+
+    const handlePrintSummary = () => {
+        try {
+            window.print();
+        } catch (err) {
+            console.warn('Direct print blocked, attempting popup fallback...', err);
+            try {
+                const printWin = window.open('', '_blank', 'width=800,height=600');
+                if (printWin) {
+                    printWin.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Circuit Workout Summary</title>
+                            <style>
+                                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; color: #111; line-height: 1.5; }
+                                h1 { font-size: 22px; color: #ea580c; border-bottom: 2px solid #ea580c; padding-bottom: 8px; margin-bottom: 20px; }
+                                .station { border: 1px solid #d1d5db; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+                                .st-title { font-size: 16px; font-weight: bold; color: #111827; }
+                                .st-cat { text-transform: uppercase; font-size: 11px; font-weight: bold; color: #ea580c; }
+                                .st-target { font-weight: bold; color: #ea580c; float: right; font-size: 15px; }
+                                .st-notes { font-size: 12px; font-style: italic; color: #4b5563; margin-top: 4px; }
+                            </style>
+                        </head>
+                        <body>
+                            <h1>Circuit Workout Summ
