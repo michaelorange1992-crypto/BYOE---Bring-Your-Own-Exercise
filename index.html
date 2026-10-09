@@ -1,555 +1,629 @@
-```react
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-    ChevronRight, 
-    ChevronLeft, 
-    Play, 
-    CheckCircle2, 
-    RotateCcw, 
-    Dumbbell, 
-    Clock, 
-    Flame, 
-    Edit3, 
-    Layers, 
-    HeartPulse, 
-    ArrowRight,
-    Sparkles,
-    FileText,
-    Check,
-    Copy,
-    Printer,
-    Minus,
-    Plus,
-    GripVertical,
-    ArrowUp,
-    ArrowDown
-} from 'lucide-react';
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Circuit Builder</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel Standalone for in-browser JSX compiling -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-neutral-900 text-neutral-100 min-h-screen">
+    <div id="root"></div>
 
-const STORAGE_KEY = 'circuit_builder_app_state_v2';
+    <script type="text/babel">
+        const { useState, useRef, useEffect, useCallback } = React;
 
-const CATEGORIES = [
-    { key: 'core', title: 'Core', icon: Layers, description: 'Trunk stability and core strength' },
-    { key: 'cardio', title: 'Cardio', icon: HeartPulse, description: 'Heart rate elevation and stamina' },
-    { key: 'push', title: 'Push', icon: Dumbbell, description: 'Chest, shoulders, and triceps focus' },
-    { key: 'pull', title: 'Pull', icon: Flame, description: 'Back, rear delts, and biceps focus' },
-    { key: 'legs', title: 'Legs', icon: Sparkles, description: 'Quads, hamstrings, glutes, and calves' }
-];
+        const ChevronRight = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
+        );
+        const ChevronLeft = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>
+        );
+        const Play = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="6 3 20 12 6 21 6 3"/></svg>
+        );
+        const CheckCircle2 = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+        );
+        const RotateCcw = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        );
+        const Dumbbell = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1a5 5 0 0 0-7 0l-1 1"/><path d="m3 3 1 1a5 5 0 0 0 7 0l1-1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/></svg>
+        );
+        const Clock = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        );
+        const Flame = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+        );
+        const Edit3 = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        );
+        const Layers = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+        );
+        const HeartPulse = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg>
+        );
+        const Sparkles = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        );
+        const FileText = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+        );
+        const Check = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 6 9 17l-5-5"/></svg>
+        );
+        const Copy = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+        );
+        const Printer = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+        );
+        const Minus = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/></svg>
+        );
+        const Plus = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        );
+        const GripVertical = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+        );
+        const ArrowUp = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+        );
+        const ArrowDown = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+        );
 
-const CATEGORY_EXERCISES = {
-    core: [
-        'Plank',
-        'Side Plank',
-        'Side Plank Dips',
-        'Sit-ups',
-        'Crunches',
-        'Russian Twists',
-        'Hanging Leg Raises',
-        'Lying Leg Raises',
-        'Ab Rollouts',
-        'Bicycle Crunches',
-        'Mountain Climbers',
-        'Hollow Body',
-        'V-Ups / Jackknives',
-        'Deadbug',
-        'Bird Dog',
-        'Flutter Kicks',
-        'Woodchoppers',
-        'Dragon Flags',
-        'Toe Touches',
-        'Reverse Crunches',
-        'Windshield Wipers',
-        'Custom Exercise'
-    ],
-    cardio: [
-        'Running',
-        'Skipping Rope',
-        'Rowing',
-        'Air Bike',
-        'Exercise Bike',
-        'Elliptical',
-        'Stair Climber',
-        'Jumping Jacks',
-        'High Knees',
-        'Burpees',
-        'Box Jumps',
-        'Shadow Boxing',
-        'Sprints / Shuttle Runs',
-        'Battle Ropes',
-        'Agility Ladder Drills',
-        'Skater Hops',
-        'Bear Crawls',
-        'Custom Exercise'
-    ],
-    push: [
-        'Push-ups',
-        'Diamond Push-ups',
-        'Pike Push-ups',
-        'Handstand Push-ups',
-        'Bench Press',
-        'Overhead Press',
-        'Chest Flyes',
-        'Dips',
-        'Lateral Raises',
-        'Arnold Press',
-        'Tricep Pushdowns',
-        'Tricep Extensions',
-        'Skull Crushers',
-        'Custom Exercise'
-    ],
-    pull: [
-        'Pull-ups',
-        'Chin-ups',
-        'Bent-over Rows',
-        'Seated Rows',
-        'Single-Arm Rows',
-        'Inverted Rows',
-        'Lat Pulldowns',
-        'Straight-Arm Pulldowns',
-        'Face Pulls',
-        'Bicep Curls',
-        'Hammer Curls',
-        'Preacher Curls',
-        'Shrugs',
-        'Custom Exercise'
-    ],
-    legs: [
-        'Squats',
-        'Lunges',
-        'Walking Lunges',
-        'Reverse Lunges',
-        'Split Squats',
-        'Deadlifts',
-        'Romanian Deadlifts',
-        'Leg Press',
-        'Leg Extensions',
-        'Leg Curls',
-        'Calf Raises',
-        'Step-ups',
-        'Hip Thrusts / Glute Bridges',
-        'Custom Exercise'
-    ]
-};
+        const STORAGE_KEY = 'circuit_builder_app_state_v2';
 
-const RESISTANCE_LEVEL_OPTIONS = ['Kilogrammes (kg)', 'Pounds (lbs)'];
+        const CATEGORIES = [
+            { key: 'core', title: 'Core', icon: Layers, description: 'Trunk stability and core strength' },
+            { key: 'cardio', title: 'Cardio', icon: HeartPulse, description: 'Heart rate elevation and stamina' },
+            { key: 'push', title: 'Push', icon: Dumbbell, description: 'Chest, shoulders, and triceps focus' },
+            { key: 'pull', title: 'Pull', icon: Flame, description: 'Back, rear delts, and biceps focus' },
+            { key: 'legs', title: 'Legs', icon: Sparkles, description: 'Quads, hamstrings, glutes, and calves' }
+        ];
 
-const RESISTANCE_TYPE_OPTIONS = [
-    'Bodyweight',
-    'Bodyweight (Incline)',
-    'Bodyweight (Decline)',
-    'Dumbbell',
-    'Kettlebell',
-    'Barbell',
-    'Resistance Band',
-    'TRX / Suspension',
-    'Cable Machine',
-    'Incline',
-    'Decline',
-    'Plate / Weight Plate',
-    'Smith Machine',
-    'Other Machine'
-];
-
-const INITIAL_EXERCISE_STATE = {
-    exerciseName: '',
-    customExerciseName: '',
-    resistanceLevel: 'Kilogrammes (kg)',
-    resistanceWeightValue: '',
-    resistanceType: 'Bodyweight',
-    targetType: 'reps',
-    targetValue: '10',
-    perSide: false,
-    notes: ''
-};
-
-function MinuteDialSelector({ value, onChange }) {
-    const dialRef = useRef(null);
-    const [isDragging, setIsDragging] = useState(false);
-
-    const numVal = parseFloat(value) || 1;
-    const minVal = 0.5;
-    const maxVal = 20;
-
-    const percentage = Math.min(Math.max((numVal - minVal) / (maxVal - minVal), 0), 1);
-    const rotationAngle = percentage * 260 - 130;
-
-    const calculateValFromPointer = useCallback((clientX, clientY) => {
-        if (!dialRef.current) return;
-        const rect = dialRef.current.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-
-        const dx = clientX - centerX;
-        const dy = clientY - centerY;
-
-        let deg = Math.atan2(dx, -dy) * (180 / Math.PI);
-
-        if (deg < -150) deg = -130;
-        if (deg > 150) deg = 130;
-
-        const clampedDeg = Math.min(Math.max(deg, -130), 130);
-        const normPercentage = (clampedDeg + 130) / 260;
-        
-        let calculatedVal = minVal + normPercentage * (maxVal - minVal);
-        calculatedVal = Math.round(calculatedVal * 2) / 2;
-        calculatedVal = Math.min(Math.max(calculatedVal, minVal), maxVal);
-
-        onChange(String(calculatedVal));
-    }, [onChange, minVal, maxVal]);
-
-    const handlePointerDown = (e) => {
-        e.preventDefault();
-        setIsDragging(true);
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        calculateValFromPointer(clientX, clientY);
-    };
-
-    useEffect(() => {
-        if (!isDragging) return;
-
-        const handlePointerMove = (e) => {
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            calculateValFromPointer(clientX, clientY);
+        const CATEGORY_EXERCISES = {
+            core: ['Plank', 'Side Plank', 'Side Plank Dips', 'Sit-ups', 'Crunches', 'Russian Twists', 'Hanging Leg Raises', 'Lying Leg Raises', 'Ab Rollouts', 'Bicycle Crunches', 'Mountain Climbers', 'Hollow Body', 'V-Ups / Jackknives', 'Deadbug', 'Bird Dog', 'Flutter Kicks', 'Woodchoppers', 'Dragon Flags', 'Toe Touches', 'Reverse Crunches', 'Windshield Wipers', 'Custom Exercise'],
+            cardio: ['Running', 'Skipping Rope', 'Rowing', 'Air Bike', 'Exercise Bike', 'Elliptical', 'Stair Climber', 'Jumping Jacks', 'High Knees', 'Burpees', 'Box Jumps', 'Shadow Boxing', 'Sprints / Shuttle Runs', 'Battle Ropes', 'Agility Ladder Drills', 'Skater Hops', 'Bear Crawls', 'Custom Exercise'],
+            push: ['Push-ups', 'Diamond Push-ups', 'Pike Push-ups', 'Handstand Push-ups', 'Bench Press', 'Overhead Press', 'Chest Flyes', 'Dips', 'Lateral Raises', 'Arnold Press', 'Tricep Pushdowns', 'Tricep Extensions', 'Skull Crushers', 'Custom Exercise'],
+            pull: ['Pull-ups', 'Chin-ups', 'Bent-over Rows', 'Seated Rows', 'Single-Arm Rows', 'Inverted Rows', 'Lat Pulldowns', 'Straight-Arm Pulldowns', 'Face Pulls', 'Bicep Curls', 'Hammer Curls', 'Preacher Curls', 'Shrugs', 'Custom Exercise'],
+            legs: ['Squats', 'Lunges', 'Walking Lunges', 'Reverse Lunges', 'Split Squats', 'Deadlifts', 'Romanian Deadlifts', 'Leg Press', 'Leg Extensions', 'Leg Curls', 'Calf Raises', 'Step-ups', 'Hip Thrusts / Glute Bridges', 'Custom Exercise']
         };
 
-        const handlePointerUp = () => {
-            setIsDragging(false);
+        const RESISTANCE_LEVEL_OPTIONS = ['Kilogrammes (kg)', 'Pounds (lbs)'];
+
+        const RESISTANCE_TYPE_OPTIONS = [
+            'Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Dumbbell', 'Kettlebell', 'Barbell', 'Resistance Band', 'TRX / Suspension', 'Cable Machine', 'Incline', 'Decline', 'Plate / Weight Plate', 'Smith Machine', 'Other Machine'
+        ];
+
+        const INITIAL_EXERCISE_STATE = {
+            exerciseName: '',
+            customExerciseName: '',
+            resistanceLevel: 'Kilogrammes (kg)',
+            resistanceWeightValue: '',
+            resistanceType: 'Bodyweight',
+            targetType: 'reps',
+            targetValue: '10',
+            perSide: false,
+            notes: ''
         };
 
-        window.addEventListener('mousemove', handlePointerMove);
-        window.addEventListener('mouseup', handlePointerUp);
-        window.addEventListener('touchmove', handlePointerMove, { passive: false });
-        window.addEventListener('touchend', handlePointerUp);
+        function MinuteDialSelector({ value, onChange }) {
+            const dialRef = useRef(null);
+            const [isDragging, setIsDragging] = useState(false);
 
-        return () => {
-            window.removeEventListener('mousemove', handlePointerMove);
-            window.removeEventListener('mouseup', handlePointerUp);
-            window.removeEventListener('touchmove', handlePointerMove);
-            window.removeEventListener('touchend', handlePointerUp);
-        };
-    }, [isDragging, calculateValFromPointer]);
+            const numVal = parseFloat(value) || 1;
+            const minVal = 0.5;
+            const maxVal = 20;
 
-    const handleStep = (step) => {
-        let updated = Math.round((numVal + step) * 2) / 2;
-        if (updated < minVal) updated = minVal;
-        if (updated > 30) updated = 30;
-        onChange(String(updated));
-    };
+            const percentage = Math.min(Math.max((numVal - minVal) / (maxVal - minVal), 0), 1);
+            const rotationAngle = percentage * 260 - 130;
 
-    return (
-        <div className="flex flex-col items-center justify-center space-y-4 pt-1 pb-2 select-none">
-            <div 
-                ref={dialRef}
-                onMouseDown={handlePointerDown}
-                onTouchStart={handlePointerDown}
-                className={`relative w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-neutral-900 border-4 ${
-                    isDragging ? 'border-orange-500 shadow-orange-950/50' : 'border-neutral-700 hover:border-neutral-600'
-                } shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing touch-none transition-colors duration-150 overflow-hidden group`}
-            >
-                <svg className="absolute inset-0 w-full h-full transform -rotate-90 p-2 pointer-events-none">
-                    <circle
-                        cx="50%"
-                        cy="50%"
-                        r="42%"
-                        className="stroke-neutral-800"
-                        strokeWidth="10"
-                        fill="transparent"
-                    />
-                    <circle
-                        cx="50%"
-                        cy="50%"
-                        r="42%"
-                        className="stroke-orange-600 transition-all duration-75"
-                        strokeWidth="10"
-                        fill="transparent"
-                        strokeDasharray="280"
-                        strokeDashoffset={280 - percentage * 280}
-                        strokeLinecap="round"
-                    />
-                </svg>
+            const calculateValFromPointer = useCallback((clientX, clientY) => {
+                if (!dialRef.current) return;
+                const rect = dialRef.current.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
 
-                <div 
-                    className="absolute inset-0 flex items-center justify-center transition-transform duration-75 pointer-events-none"
-                    style={{ transform: `rotate(${rotationAngle}deg)` }}
-                >
-                    <div className="w-full h-full relative">
-                        <div className={`absolute top-2.5 left-1/2 -translate-x-1/2 w-5 h-5 sm:w-6 sm:h-6 bg-orange-500 rounded-full shadow-lg border-2 border-white transition-transform ${
-                            isDragging ? 'scale-125 bg-orange-400 ring-4 ring-orange-500/50' : 'group-hover:scale-110'
-                        }`} />
+                const dx = clientX - centerX;
+                const dy = clientY - centerY;
+
+                let deg = Math.atan2(dx, -dy) * (180 / Math.PI);
+
+                if (deg < -150) deg = -130;
+                if (deg > 150) deg = 130;
+
+                const clampedDeg = Math.min(Math.max(deg, -130), 130);
+                const normPercentage = (clampedDeg + 130) / 260;
+                
+                let calculatedVal = minVal + normPercentage * (maxVal - minVal);
+                calculatedVal = Math.round(calculatedVal * 2) / 2;
+                calculatedVal = Math.min(Math.max(calculatedVal, minVal), maxVal);
+
+                onChange(String(calculatedVal));
+            }, [onChange, minVal, maxVal]);
+
+            const handlePointerDown = (e) => {
+                e.preventDefault();
+                setIsDragging(true);
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                calculateValFromPointer(clientX, clientY);
+            };
+
+            useEffect(() => {
+                if (!isDragging) return;
+
+                const handlePointerMove = (e) => {
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    calculateValFromPointer(clientX, clientY);
+                };
+
+                const handlePointerUp = () => {
+                    setIsDragging(false);
+                };
+
+                window.addEventListener('mousemove', handlePointerMove);
+                window.addEventListener('mouseup', handlePointerUp);
+                window.addEventListener('touchmove', handlePointerMove, { passive: false });
+                window.addEventListener('touchend', handlePointerUp);
+
+                return () => {
+                    window.removeEventListener('mousemove', handlePointerMove);
+                    window.removeEventListener('mouseup', handlePointerUp);
+                    window.removeEventListener('touchmove', handlePointerMove);
+                    window.removeEventListener('touchend', handlePointerUp);
+                };
+            }, [isDragging, calculateValFromPointer]);
+
+            const handleStep = (step) => {
+                let updated = Math.round((numVal + step) * 2) / 2;
+                if (updated < minVal) updated = minVal;
+                if (updated > 30) updated = 30;
+                onChange(String(updated));
+            };
+
+            return (
+                <div className="flex flex-col items-center justify-center space-y-4 pt-1 pb-2 select-none">
+                    <div 
+                        ref={dialRef}
+                        onMouseDown={handlePointerDown}
+                        onTouchStart={handlePointerDown}
+                        className={`relative w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-neutral-900 border-4 ${
+                            isDragging ? 'border-orange-500 shadow-orange-950/50' : 'border-neutral-700 hover:border-neutral-600'
+                        } shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing touch-none transition-colors duration-150 overflow-hidden group`}
+                    >
+                        <svg className="absolute inset-0 w-full h-full transform -rotate-90 p-2 pointer-events-none">
+                            <circle cx="50%" cy="50%" r="42%" className="stroke-neutral-800" strokeWidth="10" fill="transparent" />
+                            <circle
+                                cx="50%" cy="50%" r="42%" className="stroke-orange-600 transition-all duration-75"
+                                strokeWidth="10" fill="transparent" strokeDasharray="280"
+                                strokeDashoffset={280 - percentage * 280} strokeLinecap="round"
+                            />
+                        </svg>
+
+                        <div 
+                            className="absolute inset-0 flex items-center justify-center transition-transform duration-75 pointer-events-none"
+                            style={{ transform: `rotate(${rotationAngle}deg)` }}
+                        >
+                            <div className="w-full h-full relative">
+                                <div className={`absolute top-2.5 left-1/2 -translate-x-1/2 w-5 h-5 sm:w-6 sm:h-6 bg-orange-500 rounded-full shadow-lg border-2 border-white transition-transform ${
+                                    isDragging ? 'scale-125 bg-orange-400 ring-4 ring-orange-500/50' : 'group-hover:scale-110'
+                                }`} />
+                            </div>
+                        </div>
+
+                        <div className="z-10 flex flex-col items-center justify-center text-center p-3 bg-neutral-950/90 rounded-full w-32 h-32 sm:w-36 sm:h-36 border-2 border-neutral-800 shadow-inner pointer-events-none">
+                            <span className="text-3xl sm:text-4xl font-black text-orange-500 leading-none tracking-tight">
+                                {numVal}
+                            </span>
+                            <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 mt-1">
+                                {numVal === 1 ? 'Minute' : 'Minutes'}
+                            </span>
+                            <span className="text-[9px] text-neutral-500 mt-1 font-semibold">
+                                {isDragging ? 'Dragging...' : 'Rotate Knob'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3 pt-1">
+                        <button
+                            type="button" onClick={() => handleStep(-0.5)}
+                            className="w-10 h-10 bg-neutral-800 hover:bg-neutral-700 active:scale-95 text-orange-500 font-bold rounded-xl border border-neutral-600 flex items-center justify-center transition"
+                            aria-label="Decrease time"
+                        >
+                            <Minus size={18} />
+                        </button>
+                        <span className="text-xs font-semibold text-neutral-400 px-2">0.5m Steps</span>
+                        <button
+                            type="button" onClick={() => handleStep(0.5)}
+                            className="w-10 h-10 bg-neutral-800 hover:bg-neutral-700 active:scale-95 text-orange-500 font-bold rounded-xl border border-neutral-600 flex items-center justify-center transition"
+                            aria-label="Increase time"
+                        >
+                            <Plus size={18} />
+                        </button>
                     </div>
                 </div>
-
-                <div className="z-10 flex flex-col items-center justify-center text-center p-3 bg-neutral-950/90 rounded-full w-32 h-32 sm:w-36 sm:h-36 border-2 border-neutral-800 shadow-inner pointer-events-none">
-                    <span className="text-3xl sm:text-4xl font-black text-orange-500 leading-none tracking-tight">
-                        {numVal}
-                    </span>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 mt-1">
-                        {numVal === 1 ? 'Minute' : 'Minutes'}
-                    </span>
-                    <span className="text-[9px] text-neutral-500 mt-1 font-semibold">
-                        {isDragging ? 'Dragging...' : 'Rotate Knob'}
-                    </span>
-                </div>
-            </div>
-
-            <div className="flex items-center space-x-3 pt-1">
-                <button
-                    type="button"
-                    onClick={() => handleStep(-0.5)}
-                    className="w-10 h-10 bg-neutral-800 hover:bg-neutral-700 active:scale-95 text-orange-500 font-bold rounded-xl border border-neutral-600 flex items-center justify-center transition"
-                    aria-label="Decrease time"
-                >
-                    <Minus size={18} />
-                </button>
-
-                <span className="text-xs font-semibold text-neutral-400 px-2">
-                    0.5m Steps
-                </span>
-
-                <button
-                    type="button"
-                    onClick={() => handleStep(0.5)}
-                    className="w-10 h-10 bg-neutral-800 hover:bg-neutral-700 active:scale-95 text-orange-500 font-bold rounded-xl border border-neutral-600 flex items-center justify-center transition"
-                    aria-label="Increase time"
-                >
-                    <Plus size={18} />
-                </button>
-            </div>
-        </div>
-    );
-}
-
-const getSavedState = (key, fallback) => {
-    try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            if (parsed && parsed[key] !== undefined) {
-                return parsed[key];
-            }
+            );
         }
-    } catch (e) {
-        console.error('Failed to read local storage:', e);
-    }
-    return fallback;
-};
 
-export default function App() {
-    const [currentStep, setCurrentStep] = useState(() => getSavedState('currentStep', 0));
-    const [rounds, setRounds] = useState(() => getSavedState('rounds', 3));
-    const [copied, setCopied] = useState(false);
-    const [completedRounds, setCompletedRounds] = useState(() => getSavedState('completedRounds', {}));
-
-    const [categoryOrder, setCategoryOrder] = useState(() => 
-        getSavedState('categoryOrder', ['core', 'cardio', 'push', 'pull', 'legs'])
-    );
-
-    const [workoutData, setWorkoutData] = useState(() => 
-        getSavedState('workoutData', {
-            core: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.core[0] },
-            cardio: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.cardio[0], targetType: 'minutes', targetValue: '1' },
-            push: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.push[0] },
-            pull: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.pull[0] },
-            legs: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.legs[0] }
-        })
-    );
-
-    const [draggedIdx, setDraggedIdx] = useState(null);
-    const touchStartIndex = useRef(null);
-
-    useEffect(() => {
-        try {
-            const stateToSave = {
-                currentStep,
-                rounds,
-                workoutData,
-                completedRounds,
-                categoryOrder
-            };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
-        } catch (e) {
-            console.error('Failed to persist state:', e);
-        }
-    }, [currentStep, rounds, workoutData, completedRounds, categoryOrder]);
-
-    const updateCategoryField = (categoryKey, field, value) => {
-        setWorkoutData(prev => ({
-            ...prev,
-            [categoryKey]: {
-                ...prev[categoryKey],
-                [field]: value
-            }
-        }));
-    };
-
-    const handleStartWorkout = () => {
-        setCurrentStep(1);
-    };
-
-    const handleNext = () => {
-        if (currentStep < 5) {
-            setCurrentStep(prev => prev + 1);
-        } else {
-            setCurrentStep(6);
-        }
-    };
-
-    const handleBack = () => {
-        if (currentStep > 0) {
-            setCurrentStep(prev => prev - 1);
-        }
-    };
-
-    const handleReset = () => {
-        setCurrentStep(0);
-        setCompletedRounds({});
-    };
-
-    const moveStation = (index, direction) => {
-        const targetIndex = index + direction;
-        if (targetIndex < 0 || targetIndex >= categoryOrder.length) return;
-
-        const newOrder = [...categoryOrder];
-        const [movedItem] = newOrder.splice(index, 1);
-        newOrder.splice(targetIndex, 0, movedItem);
-        setCategoryOrder(newOrder);
-    };
-
-    const handleDragStart = (e, index) => {
-        setDraggedIdx(index);
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', index);
-    };
-
-    const handleDragOver = (e, index) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-    };
-
-    const handleDrop = (e, dropIndex) => {
-        e.preventDefault();
-        if (draggedIdx === null || draggedIdx === dropIndex) return;
-
-        const newOrder = [...categoryOrder];
-        const [movedItem] = newOrder.splice(draggedIdx, 1);
-        newOrder.splice(dropIndex, 0, movedItem);
-
-        setCategoryOrder(newOrder);
-        setDraggedIdx(null);
-    };
-
-    const handleTouchStart = (e, index) => {
-        touchStartIndex.current = index;
-        setDraggedIdx(index);
-    };
-
-    const handleTouchMove = (e) => {
-        if (touchStartIndex.current === null) return;
-        const touchY = e.touches[0].clientY;
-        const targetEl = document.elementFromPoint(e.touches[0].clientX, touchY);
-        if (!targetEl) return;
-        const cardEl = targetEl.closest('[data-station-index]');
-        if (cardEl) {
-            const overIndex = parseInt(cardEl.getAttribute('data-station-index'), 10);
-            if (!isNaN(overIndex) && overIndex !== touchStartIndex.current) {
-                const newOrder = [...categoryOrder];
-                const [movedItem] = newOrder.splice(touchStartIndex.current, 1);
-                newOrder.splice(overIndex, 0, movedItem);
-                setCategoryOrder(newOrder);
-                touchStartIndex.current = overIndex;
-                setDraggedIdx(overIndex);
-            }
-        }
-    };
-
-    const handleTouchEnd = () => {
-        touchStartIndex.current = null;
-        setDraggedIdx(null);
-    };
-
-    const handleCopySummary = () => {
-        let text = `CIRCUIT WORKOUT SUMMARY (${rounds} ${rounds === 1 ? 'Round' : 'Rounds'})\n`;
-        text += `==========================================\n\n`;
-
-        categoryOrder.forEach((catKey, index) => {
-            const catObj = CATEGORIES.find(c => c.key === catKey);
-            if (!catObj) return;
-
-            const data = workoutData[catKey];
-            const name = data.exerciseName === 'Custom Exercise' && data.customExerciseName
-                ? data.customExerciseName
-                : data.exerciseName;
-            const isMins = data.targetType === 'minutes';
-            const perSideText = data.perSide ? ' (per side)' : '';
-            const targetText = isMins
-                ? `${data.targetValue} ${data.targetValue === '1' ? 'min' : 'mins'}${perSideText}`
-                : `${data.targetValue} reps${perSideText}`;
-            
-            const isBodyweight = ['Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Incline', 'Decline'].includes(data.resistanceType);
-            const hasWeight = !isBodyweight && data.resistanceWeightValue;
-            const weightText = hasWeight ? ` (${data.resistanceWeightValue} ${data.resistanceLevel.includes('kg') ? 'kg' : 'lbs'})` : '';
-            const resType = data.resistanceType ? ` [${data.resistanceType}]` : '';
-
-            text += `${index + 1}. ${catObj.title.toUpperCase()}: ${name}${resType}${weightText}\n`;
-            text += `   Target: ${targetText}\n`;
-            if (data.notes) {
-                text += `   Notes: ${data.notes}\n`;
-            }
-            text += `\n`;
-        });
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(() => {
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-            }).catch(() => {
-                fallbackCopyText(text);
-            });
-        } else {
-            fallbackCopyText(text);
-        }
-    };
-
-    const fallbackCopyText = (text) => {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-            document.execCommand('copy');
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error('Copy failed', err);
-        }
-        document.body.removeChild(textarea);
-    };
-
-    const handlePrintSummary = () => {
-        try {
-            window.print();
-        } catch (err) {
-            console.warn('Direct print blocked, attempting popup fallback...', err);
+        const getSavedState = (key, fallback) => {
             try {
-                const printWin = window.open('', '_blank', 'width=800,height=600');
-                if (printWin) {
-                    printWin.document.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>Circuit Workout Summary</title>
-                            <style>
-                                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; color: #111; line-height: 1.5; }
-                                h1 { font-size: 22px; color: #ea580c; border-bottom: 2px solid #ea580c; padding-bottom: 8px; margin-bottom: 20px; }
-                                .station { border: 1px solid #d1d5db; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
-                                .st-title { font-size: 16px; font-weight: bold; color: #111827; }
-                                .st-cat { text-transform: uppercase; font-size: 11px; font-weight: bold; color: #ea580c; }
-                                .st-target { font-weight: bold; color: #ea580c; float: right; font-size: 15px; }
-                                .st-notes { font-size: 12px; font-style: italic; color: #4b5563; margin-top: 4px; }
-                            </style>
-                        </head>
-                        <body>
-                            <h1>Circuit Workout Summ
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && parsed[key] !== undefined) return parsed[key];
+                }
+            } catch (e) {
+                console.error('Failed to read local storage:', e);
+            }
+            return fallback;
+        };
+
+        function App() {
+            const [currentStep, setCurrentStep] = useState(() => getSavedState('currentStep', 0));
+            const [rounds, setRounds] = useState(() => getSavedState('rounds', 3));
+            const [copied, setCopied] = useState(false);
+            const [completedRounds, setCompletedRounds] = useState(() => getSavedState('completedRounds', {}));
+            const [categoryOrder, setCategoryOrder] = useState(() => getSavedState('categoryOrder', ['core', 'cardio', 'push', 'pull', 'legs']));
+
+            const [workoutData, setWorkoutData] = useState(() => getSavedState('workoutData', {
+                core: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.core[0] },
+                cardio: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.cardio[0], targetType: 'minutes', targetValue: '1' },
+                push: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.push[0] },
+                pull: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.pull[0] },
+                legs: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.legs[0] }
+            }));
+
+            const [draggedIdx, setDraggedIdx] = useState(null);
+            const touchStartIndex = useRef(null);
+
+            useEffect(() => {
+                try {
+                    const stateToSave = { currentStep, rounds, workoutData, completedRounds, categoryOrder };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+                } catch (e) {
+                    console.error('Failed to persist state:', e);
+                }
+            }, [currentStep, rounds, workoutData, completedRounds, categoryOrder]);
+
+            const updateCategoryField = (categoryKey, field, value) => {
+                setWorkoutData(prev => ({
+                    ...prev,
+                    [categoryKey]: { ...prev[categoryKey], [field]: value }
+                }));
+            };
+
+            const handleStartWorkout = () => setCurrentStep(1);
+            const handleNext = () => currentStep < 5 ? setCurrentStep(prev => prev + 1) : setCurrentStep(6);
+            const handleBack = () => currentStep > 0 && setCurrentStep(prev => prev - 1);
+            const handleReset = () => { setCurrentStep(0); setCompletedRounds({}); };
+
+            const moveStation = (index, direction) => {
+                const targetIndex = index + direction;
+                if (targetIndex < 0 || targetIndex >= categoryOrder.length) return;
+                const newOrder = [...categoryOrder];
+                const [movedItem] = newOrder.splice(index, 1);
+                newOrder.splice(targetIndex, 0, movedItem);
+                setCategoryOrder(newOrder);
+            };
+
+            const handleDragStart = (e, index) => { setDraggedIdx(index); e.dataTransfer.effectAllowed = 'move'; };
+            const handleDragOver = (e) => e.preventDefault();
+            const handleDrop = (e, dropIndex) => {
+                e.preventDefault();
+                if (draggedIdx === null || draggedIdx === dropIndex) return;
+                const newOrder = [...categoryOrder];
+                const [movedItem] = newOrder.splice(draggedIdx, 1);
+                newOrder.splice(dropIndex, 0, movedItem);
+                setCategoryOrder(newOrder);
+                setDraggedIdx(null);
+            };
+
+            const handleTouchStart = (e, index) => { touchStartIndex.current = index; setDraggedIdx(index); };
+            const handleTouchMove = (e) => {
+                if (touchStartIndex.current === null) return;
+                const touchY = e.touches[0].clientY;
+                const targetEl = document.elementFromPoint(e.touches[0].clientX, touchY);
+                if (!targetEl) return;
+                const cardEl = targetEl.closest('[data-station-index]');
+                if (cardEl) {
+                    const overIndex = parseInt(cardEl.getAttribute('data-station-index'), 10);
+                    if (!isNaN(overIndex) && overIndex !== touchStartIndex.current) {
+                        const newOrder = [...categoryOrder];
+                        const [movedItem] = newOrder.splice(touchStartIndex.current, 1);
+                        newOrder.splice(overIndex, 0, movedItem);
+                        setCategoryOrder(newOrder);
+                        touchStartIndex.current = overIndex;
+                        setDraggedIdx(overIndex);
+                    }
+                }
+            };
+            const handleTouchEnd = () => { touchStartIndex.current = null; setDraggedIdx(null); };
+
+            const handleCopySummary = () => {
+                let text = `CIRCUIT WORKOUT SUMMARY (${rounds} ${rounds === 1 ? 'Round' : 'Rounds'})\n==========================================\n\n`;
+                categoryOrder.forEach((catKey, index) => {
+                    const catObj = CATEGORIES.find(c => c.key === catKey);
+                    if (!catObj) return;
+                    const data = workoutData[catKey];
+                    const name = data.exerciseName === 'Custom Exercise' && data.customExerciseName ? data.customExerciseName : data.exerciseName;
+                    const isMins = data.targetType === 'minutes';
+                    const perSideText = data.perSide ? ' (per side)' : '';
+                    const targetText = isMins ? `${data.targetValue} ${data.targetValue === '1' ? 'min' : 'mins'}${perSideText}` : `${data.targetValue} reps${perSideText}`;
+                    const isBodyweight = ['Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Incline', 'Decline'].includes(data.resistanceType);
+                    const hasWeight = !isBodyweight && data.resistanceWeightValue;
+                    const weightText = hasWeight ? ` (${data.resistanceWeightValue} ${data.resistanceLevel.includes('kg') ? 'kg' : 'lbs'})` : '';
+                    const resType = data.resistanceType ? ` [${data.resistanceType}]` : '';
+
+                    text += `${index + 1}. ${catObj.title.toUpperCase()}: ${name}${resType}${weightText}\n   Target: ${targetText}\n`;
+                    if (data.notes) text += `   Notes: ${data.notes}\n`;
+                    text += `\n`;
+                });
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+                } else {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                }
+            };
+
+            const handlePrintSummary = () => { window.print(); };
+            const toggleRoundCompletion = (roundNum) => setCompletedRounds(prev => ({ ...prev, [roundNum]: !prev[roundNum] }));
+
+            const renderStartScreen = () => (
+                <div className="flex flex-col items-center justify-center min-h-[75vh] text-center px-4">
+                    <div className="w-20 h-20 bg-orange-600/10 rounded-3xl border-2 border-orange-600/30 flex items-center justify-center mb-6 text-orange-500 shadow-xl">
+                        <Dumbbell size={42} />
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold text-neutral-100 mb-2 tracking-tight">Circuit Workout Builder</h1>
+                    <p className="text-neutral-400 text-sm sm:text-base max-w-md mb-10">Customize your 5-station circuit step-by-step.</p>
+
+                    <div className="w-full max-w-sm bg-neutral-800/80 border border-neutral-700/80 rounded-2xl p-6 shadow-2xl mb-8">
+                        <label className="block text-neutral-200 text-base font-semibold mb-4">How many rounds?</label>
+                        <div className="flex items-center justify-center space-x-4">
+                            <button onClick={() => setRounds(prev => Math.max(1, prev - 1))} className="w-12 h-12 bg-neutral-700 hover:bg-neutral-600 text-neutral-100 rounded-xl font-bold text-2xl border border-neutral-600 flex items-center justify-center">-</button>
+                            <div className="w-24 bg-neutral-900 border-2 border-orange-600 rounded-xl py-2 flex flex-col items-center justify-center shadow-inner">
+                                <span className="text-3xl font-black text-orange-500">{rounds}</span>
+                                <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">{rounds === 1 ? 'Round' : 'Rounds'}</span>
+                            </div>
+                            <button onClick={() => setRounds(prev => Math.min(20, prev + 1))} className="w-12 h-12 bg-neutral-700 hover:bg-neutral-600 text-neutral-100 rounded-xl font-bold text-2xl border border-neutral-600 flex items-center justify-center">+</button>
+                        </div>
+                    </div>
+
+                    <button onClick={handleStartWorkout} className="w-full max-w-sm bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg py-4 px-8 rounded-2xl shadow-xl flex items-center justify-center space-x-3 cursor-pointer border border-orange-500/50">
+                        <span>Start Workout</span>
+                        <Play size={22} className="fill-current" />
+                    </button>
+                </div>
+            );
+
+            const renderExerciseBuilder = (stepIndex) => {
+                const categoryObj = CATEGORIES[stepIndex - 1];
+                const categoryKey = categoryObj.key;
+                const currentData = workoutData[categoryKey];
+                const IconComponent = categoryObj.icon;
+                const exerciseOptions = CATEGORY_EXERCISES[categoryKey];
+                const isCustom = currentData.exerciseName === 'Custom Exercise';
+                const isBodyweight = ['Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Incline', 'Decline'].includes(currentData.resistanceType);
+
+                return (
+                    <div className="max-w-xl mx-auto py-2 px-1">
+                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-neutral-800">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-orange-600/20 border border-orange-600/40 rounded-xl flex items-center justify-center text-orange-500 shadow-md">
+                                    <IconComponent size={24} />
+                                </div>
+                                <div>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-orange-500 block">Step {stepIndex} of 5</span>
+                                    <h2 className="text-2xl font-black text-neutral-100 tracking-tight">{categoryObj.title}</h2>
+                                </div>
+                            </div>
+                            <span className="text-xs text-neutral-400 bg-neutral-800 px-3 py-1.5 rounded-full border border-neutral-700">{categoryObj.description}</span>
+                        </div>
+
+                        <div className="space-y-5 bg-neutral-800/60 p-5 sm:p-6 rounded-2xl border border-neutral-700/70 shadow-2xl backdrop-blur-sm">
+                            <div>
+                                <label className="block text-sm font-semibold text-neutral-200 mb-2">Select Exercise</label>
+                                <select value={currentData.exerciseName} onChange={(e) => updateCategoryField(categoryKey, 'exerciseName', e.target.value)} className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-base rounded-xl p-3.5 focus:border-orange-500 focus:outline-none">
+                                    {exerciseOptions.map(ex => <option key={ex} value={ex}>{ex}</option>)}
+                                </select>
+                                {isCustom && (
+                                    <input type="text" placeholder="Enter custom exercise name" value={currentData.customExerciseName} onChange={(e) => updateCategoryField(categoryKey, 'customExerciseName', e.target.value)} className="w-full mt-3 bg-neutral-900 border-2 border-orange-600/60 text-neutral-100 text-sm rounded-xl p-3 focus:border-orange-500 focus:outline-none" />
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-neutral-200 mb-2">Type of Resistance</label>
+                                <select value={currentData.resistanceType} onChange={(e) => updateCategoryField(categoryKey, 'resistanceType', e.target.value)} className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-sm rounded-xl p-3.5 focus:border-orange-500 focus:outline-none">
+                                    {RESISTANCE_TYPE_OPTIONS.map(type => <option key={type} value={type}>{type}</option>)}
+                                </select>
+                            </div>
+
+                            {!isBodyweight && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-neutral-200 mb-2">Resistance Unit</label>
+                                        <select value={currentData.resistanceLevel} onChange={(e) => updateCategoryField(categoryKey, 'resistanceLevel', e.target.value)} className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-sm rounded-xl p-3.5 focus:border-orange-500 focus:outline-none">
+                                            {RESISTANCE_LEVEL_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-neutral-200 mb-2">Weight / Amount</label>
+                                        <input type="number" placeholder="e.g. 12.5" value={currentData.resistanceWeightValue} onChange={(e) => updateCategoryField(categoryKey, 'resistanceWeightValue', e.target.value)} className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-sm rounded-xl p-3.5 focus:border-orange-500 focus:outline-none" min="0" step="0.5" />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm font-semibold text-neutral-200 mb-2">Target Metric</label>
+                                <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-900 rounded-xl border border-neutral-700 mb-4">
+                                    <button type="button" onClick={() => { updateCategoryField(categoryKey, 'targetType', 'reps'); updateCategoryField(categoryKey, 'targetValue', '10'); }} className={`py-2 px-3 rounded-lg text-sm font-bold flex items-center justify-center space-x-1.5 ${currentData.targetType === 'reps' ? 'bg-orange-600 text-white shadow-md' : 'text-neutral-400'}`}>
+                                        <Dumbbell size={16} /><span>Reps</span>
+                                    </button>
+                                    <button type="button" onClick={() => { updateCategoryField(categoryKey, 'targetType', 'minutes'); updateCategoryField(categoryKey, 'targetValue', '1'); }} className={`py-2 px-3 rounded-lg text-sm font-bold flex items-center justify-center space-x-1.5 ${currentData.targetType === 'minutes' ? 'bg-orange-600 text-white shadow-md' : 'text-neutral-400'}`}>
+                                        <Clock size={16} /><span>Minutes</span>
+                                    </button>
+                                </div>
+
+                                {currentData.targetType === 'reps' ? (
+                                    <div className="flex items-center justify-center space-x-3 bg-neutral-900 p-3.5 rounded-xl border-2 border-neutral-700">
+                                        <button type="button" onClick={() => { const val = Math.max(1, (parseInt(currentData.targetValue, 10) || 10) - 1); updateCategoryField(categoryKey, 'targetValue', String(val)); }} className="w-11 h-11 bg-neutral-800 hover:bg-neutral-700 text-orange-500 font-bold text-2xl rounded-xl border border-neutral-600 flex items-center justify-center">-</button>
+                                        <div className="flex-grow max-w-[170px] text-center">
+                                            <input type="number" value={currentData.targetValue} onChange={(e) => updateCategoryField(categoryKey, 'targetValue', e.target.value)} min="1" max="500" className="w-full text-center bg-neutral-950 border-2 border-orange-600 text-orange-500 font-black text-2xl py-1.5 rounded-xl focus:outline-none" />
+                                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mt-1">Repetitions</span>
+                                        </div>
+                                        <button type="button" onClick={() => { const val = (parseInt(currentData.targetValue, 10) || 0) + 1; updateCategoryField(categoryKey, 'targetValue', String(val)); }} className="w-11 h-11 bg-neutral-800 hover:bg-neutral-700 text-orange-500 font-bold text-2xl rounded-xl border border-neutral-600 flex items-center justify-center">+</button>
+                                    </div>
+                                ) : (
+                                    <MinuteDialSelector value={currentData.targetValue} onChange={(newVal) => updateCategoryField(categoryKey, 'targetValue', newVal)} />
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="relative inline-flex items-center gap-2.5 cursor-pointer select-none text-xs font-bold uppercase tracking-wider text-neutral-200 bg-neutral-900 border border-neutral-700 px-3.5 py-2.5 rounded-xl">
+                                    <input type="checkbox" checked={!!currentData.perSide} onChange={(e) => updateCategoryField(categoryKey, 'perSide', e.target.checked)} className="w-4 h-4 accent-orange-600" />
+                                    <span>Per side</span>
+                                </label>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-neutral-200 mb-2 flex items-center space-x-1.5"><FileText size={16} className="text-orange-500" /><span>Notes</span></label>
+                                <textarea rows={2} placeholder="Add variations or modifications e.g., assisted, modified angle, knee variation, or tempo..." value={currentData.notes} onChange={(e) => updateCategoryField(categoryKey, 'notes', e.target.value)} className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-sm rounded-xl p-3 focus:border-orange-500 focus:outline-none resize-none"></textarea>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-6 space-x-3">
+                            <button onClick={handleBack} className="flex items-center space-x-1 px-5 py-3 bg-neutral-800 text-neutral-300 font-semibold text-sm rounded-xl border border-neutral-700"><ChevronLeft size={18} /><span>Back</span></button>
+                            <button onClick={handleNext} className="flex items-center space-x-2 px-7 py-3 bg-orange-600 text-white font-bold text-base rounded-xl border border-orange-500/50"><span>{stepIndex === 5 ? 'Begin Workout' : 'Next Step'}</span><ChevronRight size={18} /></button>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderWorkoutSummary = () => (
+                <div className="max-w-2xl mx-auto py-2 px-1">
+                    <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-6 rounded-2xl shadow-xl mb-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <span className="text-xs font-black uppercase tracking-widest text-orange-200 block mb-1">Workout Circuit Ready</span>
+                            <h2 className="text-3xl font-black tracking-tight">{rounds} {rounds === 1 ? 'Round' : 'Rounds'} Circuit</h2>
+                            <p className="text-orange-100 text-xs sm:text-sm mt-1">Quick reference view. Drag or tap chevrons to reorder stations.</p>
+                        </div>
+                        <div className="flex flex-row items-center gap-2 no-print flex-wrap sm:flex-nowrap">
+                            <button onClick={handleReset} className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-2.5 bg-neutral-900/80 text-neutral-100 font-semibold text-xs rounded-xl border border-neutral-700"><RotateCcw size={15} /><span>Start Over</span></button>
+                            <button onClick={handleCopySummary} className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-2.5 bg-neutral-900/80 text-neutral-100 font-semibold text-xs rounded-xl border border-neutral-700">{copied ? <Check size={15} className="text-emerald-400" /> : <Copy size={15} />}<span>{copied ? 'Copied!' : 'Copy'}</span></button>
+                            <button onClick={handlePrintSummary} className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-2.5 bg-neutral-900/80 text-neutral-100 font-semibold text-xs rounded-xl border border-neutral-700"><Printer size={15} /><span>Print / PDF</span></button>
+                        </div>
+                    </div>
+
+                    <div className="bg-neutral-800/80 p-4 rounded-2xl border border-neutral-700/80 mb-6 no-print">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Round Tracker</label>
+                        <div className="flex flex-wrap gap-2">
+                            {Array.from({ length: rounds }, (_, i) => i + 1).map(rNum => (
+                                <button key={rNum} onClick={() => toggleRoundCompletion(rNum)} className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition border ${completedRounds[rNum] ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400' : 'bg-neutral-900 border-neutral-700 text-neutral-300'}`}>
+                                    {completedRounds[rNum] ? <Check size={14} /> : <div className="w-3 h-3 rounded-full border border-neutral-500" />}
+                                    <span>Round {rNum}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 mb-8">
+                        {categoryOrder.map((catKey, index) => {
+                            const catObj = CATEGORIES.find(c => c.key === catKey);
+                            if (!catObj) return null;
+                            const data = workoutData[catKey];
+                            const name = data.exerciseName === 'Custom Exercise' && data.customExerciseName ? data.customExerciseName : data.exerciseName;
+                            const isMins = data.targetType === 'minutes';
+                            const perSideText = data.perSide ? ' / side' : '';
+                            const targetText = isMins ? `${data.targetValue} ${data.targetValue === '1' ? 'min' : 'mins'}${perSideText}` : `${data.targetValue} reps${perSideText}`;
+                            const isBodyweight = ['Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Incline', 'Decline'].includes(data.resistanceType);
+                            const hasWeight = !isBodyweight && data.resistanceWeightValue;
+                            const weightText = hasWeight ? `${data.resistanceWeightValue} ${data.resistanceLevel.includes('kg') ? 'kg' : 'lbs'}` : null;
+
+                            return (
+                                <div key={catKey} data-station-index={index} draggable onDragStart={(e) => handleDragStart(e, index)} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, index)} className={`bg-neutral-800/90 border rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${draggedIdx === index ? 'opacity-40 border-dashed border-orange-500' : 'border-neutral-700/80'}`}>
+                                    <div className="flex items-start space-x-3 w-full sm:w-auto">
+                                        <div className="flex flex-col items-center justify-center space-y-1 pr-1 text-neutral-500 no-print self-center">
+                                            <button type="button" onClick={() => moveStation(index, -1)} disabled={index === 0} className="p-1 hover:text-orange-400 disabled:opacity-20"><ArrowUp size={14} /></button>
+                                            <div onTouchStart={(e) => handleTouchStart(e, index)} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="cursor-grab p-1 hover:text-orange-400 touch-none"><GripVertical size={18} /></div>
+                                            <button type="button" onClick={() => moveStation(index, 1)} disabled={index === categoryOrder.length - 1} className="p-1 hover:text-orange-400 disabled:opacity-20"><ArrowDown size={14} /></button>
+                                        </div>
+                                        <div className="w-9 h-9 rounded-xl bg-orange-600/20 border border-orange-600/30 text-orange-500 flex items-center justify-center font-black text-sm flex-shrink-0 mt-0.5">{index + 1}</div>
+                                        <div className="flex-grow">
+                                            <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                                                <span className="text-[11px] font-bold uppercase text-orange-500 bg-orange-950/60 px-2 py-0.5 rounded border border-orange-800/50">{catObj.title}</span>
+                                                {data.resistanceType && <span className="text-[11px] text-neutral-400 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-700">{data.resistanceType}</span>}
+                                                {data.perSide && <span className="text-[11px] font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/50">Per Side</span>}
+                                            </div>
+                                            <h3 className="text-xl font-extrabold text-neutral-100 mt-1">{name}</h3>
+                                            {data.notes && <p className="text-xs text-neutral-400 mt-1 italic"><span>Note: </span><span className="text-neutral-300">{data.notes}</span></p>}
+                                        </div>
+                                    </div>
+                                    <div className="w-full sm:w-auto flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 border-neutral-700/60 pt-2 sm:pt-0 mt-1 sm:mt-0">
+                                        <div className="bg-neutral-900 border-2 border-orange-600/80 px-4 py-2 rounded-xl text-center"><span className="text-lg font-black text-orange-500 block">{targetText}</span></div>
+                                        {weightText && <span className="text-xs font-semibold text-neutral-400 mt-1">{weightText}</span>}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex justify-center pb-8 no-print">
+                        <button onClick={() => setCurrentStep(1)} className="flex items-center space-x-2 px-6 py-3 bg-neutral-800 text-neutral-200 font-bold text-sm rounded-xl border border-neutral-700"><Edit3 size={16} /><span>Edit Circuit Exercises</span></button>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-neutral-900 text-neutral-100 font-sans flex flex-col justify-between">
+                    <header className="bg-neutral-950/80 border-b border-neutral-800/80 px-4 py-3 sticky top-0 z-30 backdrop-blur-md no-print">
+                        <div className="max-w-3xl mx-auto flex items-center justify-between">
+                            <div onClick={handleReset} className="flex items-center space-x-2 cursor-pointer group">
+                                <div className="w-7 h-7 bg-orange-600 rounded-lg flex items-center justify-center text-white font-black text-xs">C</div>
+                                <span className="font-extrabold text-neutral-100 text-sm tracking-tight group-hover:text-orange-500">Circuit Builder</span>
+                            </div>
+                            {currentStep >= 1 && currentStep <= 5 && (
+                                <div className="flex items-center space-x-1.5">
+                                    {[1, 2, 3, 4, 5].map(s => <div key={s} className={`h-2 rounded-full transition-all ${s === currentStep ? 'w-6 bg-orange-600' : s < currentStep ? 'w-2 bg-orange-900/80' : 'w-2 bg-neutral-800'}`} />)}
+                                </div>
+                            )}
+                        </div>
+                    </header>
+
+                    <main className="flex-grow px-4 py-6">
+                        {currentStep === 0 && renderStartScreen()}
+                        {currentStep >= 1 && currentStep <= 5 && renderExerciseBuilder(currentStep)}
+                        {currentStep === 6 && renderWorkoutSummary()}
+                    </main>
+
+                    <footer className="py-4 border-t border-neutral-800/50 text-center text-xs text-neutral-500 no-print">Functional Circuit Prototype</footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+```
