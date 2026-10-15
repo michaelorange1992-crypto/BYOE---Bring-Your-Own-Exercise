@@ -4,21 +4,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Circuit Builder</title>
+    <title>Circuit Builder Pro</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM CDN -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <!-- Babel Standalone for in-browser JSX compiling -->
+    <!-- Babel Standalone -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: #ffffff !important; color: #000000 !important; }
+            .printable-card {
+                background-color: #ffffff !important;
+                border: 1px solid #d1d5db !important;
+                color: #000000 !important;
+                page-break-inside: avoid;
+            }
+            .printable-card h3, .printable-card span, .printable-card p { color: #000000 !important; }
+        }
+    </style>
 </head>
-<body class="bg-neutral-900 text-neutral-100 min-h-screen">
+<body class="bg-neutral-900 text-neutral-100 min-h-screen selection:bg-orange-600 selection:text-white">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useRef, useEffect, useCallback } = React;
+        const { useState, useRef, useEffect, useCallback, useMemo } = React;
 
+        // --- SVG Icons ---
         const ChevronRight = ({ size = 24, className = "" }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
         );
@@ -40,20 +54,14 @@
         const Clock = ({ size = 24, className = "" }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         );
-        const Flame = ({ size = 24, className = "" }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+        const Settings = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        );
+        const HelpCircle = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         );
         const Edit3 = ({ size = 24, className = "" }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        );
-        const Layers = ({ size = 24, className = "" }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
-        );
-        const HeartPulse = ({ size = 24, className = "" }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg>
-        );
-        const Sparkles = ({ size = 24, className = "" }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
         );
         const FileText = ({ size = 24, className = "" }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
@@ -82,42 +90,70 @@
         const ArrowDown = ({ size = 24, className = "" }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
         );
+        const Trash2 = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+        );
+        const Trophy = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+        );
+        const X = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        );
 
-        const STORAGE_KEY = 'circuit_builder_app_state_v2';
+        const STORAGE_KEY = 'circuit_builder_app_state_v3';
 
-        const CATEGORIES = [
-            { key: 'core', title: 'Core', icon: Layers, description: 'Trunk stability and core strength' },
-            { key: 'cardio', title: 'Cardio', icon: HeartPulse, description: 'Heart rate elevation and stamina' },
-            { key: 'push', title: 'Push', icon: Dumbbell, description: 'Chest, shoulders, and triceps focus' },
-            { key: 'pull', title: 'Pull', icon: Flame, description: 'Back, rear delts, and biceps focus' },
-            { key: 'legs', title: 'Legs', icon: Sparkles, description: 'Quads, hamstrings, glutes, and calves' }
+        const MOVEMENT_TYPES = [
+            { key: 'core', title: 'Core' },
+            { key: 'cardio', title: 'Cardio' },
+            { key: 'push', title: 'Push' },
+            { key: 'pull', title: 'Pull' },
+            { key: 'legs', title: 'Legs' },
+            { key: 'full_body', title: 'Full Body' },
+            { key: 'upper_body', title: 'Upper Body' },
+            { key: 'lower_body', title: 'Lower Body' },
+            { key: 'warmup', title: 'Warmup & Stretching' }
         ];
 
-        const CATEGORY_EXERCISES = {
-            core: ['Plank', 'Side Plank', 'Side Plank Dips', 'Sit-ups', 'Crunches', 'Russian Twists', 'Hanging Leg Raises', 'Lying Leg Raises', 'Ab Rollouts', 'Bicycle Crunches', 'Mountain Climbers', 'Hollow Body', 'V-Ups / Jackknives', 'Deadbug', 'Bird Dog', 'Flutter Kicks', 'Woodchoppers', 'Dragon Flags', 'Toe Touches', 'Reverse Crunches', 'Windshield Wipers', 'Custom Exercise'],
-            cardio: ['Running', 'Skipping Rope', 'Rowing', 'Air Bike', 'Exercise Bike', 'Elliptical', 'Stair Climber', 'Jumping Jacks', 'High Knees', 'Burpees', 'Box Jumps', 'Shadow Boxing', 'Sprints / Shuttle Runs', 'Battle Ropes', 'Agility Ladder Drills', 'Skater Hops', 'Bear Crawls', 'Custom Exercise'],
-            push: ['Push-ups', 'Diamond Push-ups', 'Pike Push-ups', 'Handstand Push-ups', 'Bench Press', 'Overhead Press', 'Chest Flyes', 'Dips', 'Lateral Raises', 'Arnold Press', 'Tricep Pushdowns', 'Tricep Extensions', 'Skull Crushers', 'Custom Exercise'],
-            pull: ['Pull-ups', 'Chin-ups', 'Bent-over Rows', 'Seated Rows', 'Single-Arm Rows', 'Inverted Rows', 'Lat Pulldowns', 'Straight-Arm Pulldowns', 'Face Pulls', 'Bicep Curls', 'Hammer Curls', 'Preacher Curls', 'Shrugs', 'Custom Exercise'],
-            legs: ['Squats', 'Lunges', 'Walking Lunges', 'Reverse Lunges', 'Split Squats', 'Deadlifts', 'Romanian Deadlifts', 'Leg Press', 'Leg Extensions', 'Leg Curls', 'Calf Raises', 'Step-ups', 'Hip Thrusts / Glute Bridges', 'Custom Exercise']
+        const INITIAL_EXERCISE_DATABASE = {
+            core: ['Plank', 'Side Plank', 'Side Plank Dips', 'Sit-ups', 'Crunches', 'Russian Twists', 'Hanging Leg Raises', 'Lying Leg Raises', 'Ab Rollouts', 'Bicycle Crunches', 'Mountain Climbers', 'Hollow Body', 'V-Ups / Jackknives', 'Deadbug', 'Bird Dog', 'Flutter Kicks', 'Woodchoppers', 'Dragon Flags', 'Toe Touches', 'Reverse Crunches', 'Windshield Wipers'],
+            cardio: ['Running', 'Skipping Rope', 'Rowing', 'Air Bike', 'Exercise Bike', 'Elliptical', 'Stair Climber', 'Jumping Jacks', 'High Knees', 'Burpees', 'Box Jumps', 'Shadow Boxing', 'Sprints / Shuttle Runs', 'Battle Ropes', 'Agility Ladder Drills', 'Skater Hops', 'Bear Crawls'],
+            push: ['Push-ups', 'Diamond Push-ups', 'Pike Push-ups', 'Handstand Push-ups', 'Bench Press', 'Overhead Press', 'Chest Flyes', 'Dips', 'Lateral Raises', 'Arnold Press', 'Tricep Pushdowns', 'Tricep Extensions', 'Skull Crushers'],
+            pull: ['Pull-ups', 'Chin-ups', 'Bent-over Rows', 'Seated Rows', 'Single-Arm Rows', 'Inverted Rows', 'Lat Pulldowns', 'Straight-Arm Pulldowns', 'Face Pulls', 'Bicep Curls', 'Hammer Curls', 'Preacher Curls', 'Shrugs'],
+            legs: ['Squats', 'Lunges', 'Walking Lunges', 'Reverse Lunges', 'Split Squats', 'Deadlifts', 'Romanian Deadlifts', 'Leg Press', 'Leg Extensions', 'Leg Curls', 'Calf Raises', 'Step-ups', 'Hip Thrusts / Glute Bridges'],
+            full_body: ['Burpees', 'Kettlebell Swings', 'Clean & Press', 'Thrusters', 'Devil Press', 'Bear Crawls', 'Mountain Climbers'],
+            upper_body: ['Push-ups', 'Pull-ups', 'Overhead Press', 'Bent-over Rows', 'Dips', 'Bicep Curls'],
+            lower_body: ['Squats', 'Lunges', 'Deadlifts', 'Step-ups', 'Calf Raises', 'Hip Thrusts'],
+            warmup: ['Jumping Jacks', 'Arm Circles', 'Leg Swings', 'Cat-Cow Stretch', 'High Knees', 'World Greatest Stretch']
         };
+
+        const RESISTANCE_TYPE_OPTIONS = [
+            'Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Incline', 'Decline',
+            'Dumbbell', 'Kettlebell', 'Barbell', 'Resistance Band', 'TRX / Suspension',
+            'Weighted Vest', 'Bosu Ball', 'Swiss Ball', 'Cable Machine',
+            'Plate / Weight Plate', 'Smith Machine', 'Other Machine'
+        ];
+
+        // Resistance types that don't require numeric weight entry
+        const NO_WEIGHT_TYPES = [
+            'Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Incline', 'Decline',
+            'TRX / Suspension', 'Bosu Ball', 'Swiss Ball'
+        ];
 
         const RESISTANCE_LEVEL_OPTIONS = ['Kilogrammes (kg)', 'Pounds (lbs)'];
 
-        const RESISTANCE_TYPE_OPTIONS = [
-            'Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Dumbbell', 'Kettlebell', 'Barbell', 'Resistance Band', 'TRX / Suspension', 'Cable Machine', 'Incline', 'Decline', 'Plate / Weight Plate', 'Smith Machine', 'Other Machine'
-        ];
-
-        const INITIAL_EXERCISE_STATE = {
-            exerciseName: '',
+        const createInitialStation = (movementKey = 'core', index = 1) => ({
+            id: 'station_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            movementKey: movementKey,
+            exerciseName: INITIAL_EXERCISE_DATABASE[movementKey]?.[0] || 'Custom Exercise',
             customExerciseName: '',
-            resistanceLevel: 'Kilogrammes (kg)',
-            resistanceWeightValue: '',
-            resistanceType: 'Bodyweight',
-            targetType: 'reps',
-            targetValue: '10',
+            resistances: [
+                { id: 'res_1', type: 'Bodyweight', unit: 'Kilogrammes (kg)', weight: '' }
+            ],
+            targetType: movementKey === 'cardio' ? 'minutes' : 'reps',
+            targetValue: movementKey === 'cardio' ? '1' : '10',
             perSide: false,
             notes: ''
-        };
+        });
 
         function MinuteDialSelector({ value, onChange }) {
             const dialRef = useRef(null);
@@ -140,7 +176,6 @@
                 const dy = clientY - centerY;
 
                 let deg = Math.atan2(dx, -dy) * (180 / Math.PI);
-
                 if (deg < -150) deg = -130;
                 if (deg > 150) deg = 130;
 
@@ -164,16 +199,12 @@
 
             useEffect(() => {
                 if (!isDragging) return;
-
                 const handlePointerMove = (e) => {
                     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                     calculateValFromPointer(clientX, clientY);
                 };
-
-                const handlePointerUp = () => {
-                    setIsDragging(false);
-                };
+                const handlePointerUp = () => setIsDragging(false);
 
                 window.addEventListener('mousemove', handlePointerMove);
                 window.addEventListener('mouseup', handlePointerUp);
@@ -273,62 +304,173 @@
         };
 
         function App() {
-            const [currentStep, setCurrentStep] = useState(() => getSavedState('currentStep', 0));
+            // Navigation states: 'HOME', 'ROUNDS_SELECT', 'BUILDER', 'SUMMARY', 'CELEBRATION'
+            const [screen, setScreen] = useState(() => getSavedState('screen', 'HOME'));
+            const [activeStationIndex, setActiveStationIndex] = useState(() => getSavedState('activeStationIndex', 0));
             const [rounds, setRounds] = useState(() => getSavedState('rounds', 3));
-            const [copied, setCopied] = useState(false);
             const [completedRounds, setCompletedRounds] = useState(() => getSavedState('completedRounds', {}));
-            const [categoryOrder, setCategoryOrder] = useState(() => getSavedState('categoryOrder', ['core', 'cardio', 'push', 'pull', 'legs']));
+            const [copied, setCopied] = useState(false);
 
-            const [workoutData, setWorkoutData] = useState(() => getSavedState('workoutData', {
-                core: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.core[0] },
-                cardio: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.cardio[0], targetType: 'minutes', targetValue: '1' },
-                push: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.push[0] },
-                pull: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.pull[0] },
-                legs: { ...INITIAL_EXERCISE_STATE, exerciseName: CATEGORY_EXERCISES.legs[0] }
-            }));
+            // Modals
+            const [showSettings, setShowSettings] = useState(false);
+            const [showHelp, setShowHelp] = useState(false);
+            const [editingStationNotes, setEditingStationNotes] = useState(null); // Station ID for inline note edit
+            const [quickEditStation, setQuickEditStation] = useState(null); // Station object for quick edit modal
+            const [showCustomExModal, setShowCustomExModal] = useState(null); // Movement key if adding custom exercise
 
+            // Custom and Hidden Exercises Store
+            const [exerciseDb, setExerciseDb] = useState(() => getSavedState('exerciseDb', INITIAL_EXERCISE_DATABASE));
+            const [hiddenExercises, setHiddenExercises] = useState(() => getSavedState('hiddenExercises', {}));
+            const [newCustomExName, setNewCustomExName] = useState('');
+
+            // Workout Stations List
+            const [stations, setStations] = useState(() => getSavedState('stations', [
+                createInitialStation('core', 1),
+                createInitialStation('cardio', 2),
+                createInitialStation('push', 3),
+                createInitialStation('pull', 4),
+                createInitialStation('legs', 5)
+            ]));
+
+            // Drag reorder
             const [draggedIdx, setDraggedIdx] = useState(null);
             const touchStartIndex = useRef(null);
 
+            // Touch Swipe handling for Builder steps
+            const touchSwipeStartX = useRef(null);
+
             useEffect(() => {
                 try {
-                    const stateToSave = { currentStep, rounds, workoutData, completedRounds, categoryOrder };
+                    const stateToSave = { screen, activeStationIndex, rounds, completedRounds, stations, exerciseDb, hiddenExercises };
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
                 } catch (e) {
-                    console.error('Failed to persist state:', e);
+                    console.error('Failed to save state:', e);
                 }
-            }, [currentStep, rounds, workoutData, completedRounds, categoryOrder]);
+            }, [screen, activeStationIndex, rounds, completedRounds, stations, exerciseDb, hiddenExercises]);
 
-            const updateCategoryField = (categoryKey, field, value) => {
-                setWorkoutData(prev => ({
-                    ...prev,
-                    [categoryKey]: { ...prev[categoryKey], [field]: value }
-                }));
+            // --- Navigation Handlers ---
+            const handleGoToRounds = () => setScreen('ROUNDS_SELECT');
+            const handleStartBuilding = () => { setActiveStationIndex(0); setScreen('BUILDER'); };
+            const handleFinishBuilding = () => setScreen('SUMMARY');
+            const handleCompleteWorkout = () => setScreen('CELEBRATION');
+            const handleResetAll = () => {
+                setScreen('HOME');
+                setActiveStationIndex(0);
+                setCompletedRounds({});
             };
 
-            const handleStartWorkout = () => setCurrentStep(1);
-            const handleNext = () => currentStep < 5 ? setCurrentStep(prev => prev + 1) : setCurrentStep(6);
-            const handleBack = () => currentStep > 0 && setCurrentStep(prev => prev - 1);
-            const handleReset = () => { setCurrentStep(0); setCompletedRounds({}); };
+            // --- Station Helpers ---
+            const currentStation = stations[activeStationIndex] || stations[0];
+
+            const updateStation = (id, fields) => {
+                setStations(prev => prev.map(st => st.id === id ? { ...st, ...fields } : st));
+            };
+
+            const addStation = () => {
+                const newSt = createInitialStation('core', stations.length + 1);
+                setStations(prev => [...prev, newSt]);
+                setActiveStationIndex(stations.length);
+            };
+
+            const removeStation = (id) => {
+                if (stations.length <= 1) return;
+                setStations(prev => prev.filter(st => st.id !== id));
+                if (activeStationIndex >= stations.length - 1) {
+                    setActiveStationIndex(Math.max(0, stations.length - 2));
+                }
+            };
 
             const moveStation = (index, direction) => {
                 const targetIndex = index + direction;
-                if (targetIndex < 0 || targetIndex >= categoryOrder.length) return;
-                const newOrder = [...categoryOrder];
-                const [movedItem] = newOrder.splice(index, 1);
-                newOrder.splice(targetIndex, 0, movedItem);
-                setCategoryOrder(newOrder);
+                if (targetIndex < 0 || targetIndex >= stations.length) return;
+                const newStations = [...stations];
+                const [movedItem] = newStations.splice(index, 1);
+                newStations.splice(targetIndex, 0, movedItem);
+                setStations(newStations);
             };
 
+            // --- Resistance Handlers ---
+            const addResistanceToStation = (stationId) => {
+                setStations(prev => prev.map(st => {
+                    if (st.id === stationId) {
+                        const newRes = { id: 'res_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), type: 'Dumbbell', unit: 'Kilogrammes (kg)', weight: '' };
+                        return { ...st, resistances: [...st.resistances, newRes] };
+                    }
+                    return st;
+                }));
+            };
+
+            const updateResistanceInStation = (stationId, resId, field, value) => {
+                setStations(prev => prev.map(st => {
+                    if (st.id === stationId) {
+                        const updatedRes = st.resistances.map(r => r.id === resId ? { ...r, [field]: value } : r);
+                        return { ...st, resistances: updatedRes };
+                    }
+                    return st;
+                }));
+            };
+
+            const removeResistanceFromStation = (stationId, resId) => {
+                setStations(prev => prev.map(st => {
+                    if (st.id === stationId && st.resistances.length > 1) {
+                        return { ...st, resistances: st.resistances.filter(r => r.id !== resId) };
+                    }
+                    return st;
+                }));
+            };
+
+            // --- Exercise Database Management ---
+            const handleAddCustomExercise = (movementKey) => {
+                if (!newCustomExName.trim()) return;
+                const cleanName = newCustomExName.trim();
+                setExerciseDb(prev => ({
+                    ...prev,
+                    [movementKey]: [...(prev[movementKey] || []), cleanName]
+                }));
+                if (currentStation) {
+                    updateStation(currentStation.id, { exerciseName: cleanName });
+                }
+                setNewCustomExName('');
+                setShowCustomExModal(null);
+            };
+
+            const toggleHideExercise = (movementKey, exName) => {
+                setHiddenExercises(prev => {
+                    const categoryHidden = prev[movementKey] || [];
+                    const isHidden = categoryHidden.includes(exName);
+                    const updatedCategory = isHidden 
+                        ? categoryHidden.filter(n => n !== exName)
+                        : [...categoryHidden, exName];
+                    return { ...prev, [movementKey]: updatedCategory };
+                });
+            };
+
+            // --- Swipe Navigation for Builder ---
+            const handleBuilderTouchStart = (e) => { touchSwipeStartX.current = e.touches[0].clientX; };
+            const handleBuilderTouchEnd = (e) => {
+                if (touchSwipeStartX.current === null) return;
+                const touchEndX = e.changedTouches[0].clientX;
+                const diffX = touchSwipeStartX.current - touchEndX;
+                if (Math.abs(diffX) > 60) {
+                    if (diffX > 0 && activeStationIndex < stations.length - 1) {
+                        setActiveStationIndex(prev => prev + 1);
+                    } else if (diffX < 0 && activeStationIndex > 0) {
+                        setActiveStationIndex(prev => prev - 1);
+                    }
+                }
+                touchSwipeStartX.current = null;
+            };
+
+            // --- Summary Drag and Drop ---
             const handleDragStart = (e, index) => { setDraggedIdx(index); e.dataTransfer.effectAllowed = 'move'; };
             const handleDragOver = (e) => e.preventDefault();
             const handleDrop = (e, dropIndex) => {
                 e.preventDefault();
                 if (draggedIdx === null || draggedIdx === dropIndex) return;
-                const newOrder = [...categoryOrder];
-                const [movedItem] = newOrder.splice(draggedIdx, 1);
-                newOrder.splice(dropIndex, 0, movedItem);
-                setCategoryOrder(newOrder);
+                const newStations = [...stations];
+                const [movedItem] = newStations.splice(draggedIdx, 1);
+                newStations.splice(dropIndex, 0, movedItem);
+                setStations(newStations);
                 setDraggedIdx(null);
             };
 
@@ -342,10 +484,10 @@
                 if (cardEl) {
                     const overIndex = parseInt(cardEl.getAttribute('data-station-index'), 10);
                     if (!isNaN(overIndex) && overIndex !== touchStartIndex.current) {
-                        const newOrder = [...categoryOrder];
-                        const [movedItem] = newOrder.splice(touchStartIndex.current, 1);
-                        newOrder.splice(overIndex, 0, movedItem);
-                        setCategoryOrder(newOrder);
+                        const newStations = [...stations];
+                        const [movedItem] = newStations.splice(touchStartIndex.current, 1);
+                        newStations.splice(overIndex, 0, movedItem);
+                        setStations(newStations);
                         touchStartIndex.current = overIndex;
                         setDraggedIdx(overIndex);
                     }
@@ -353,26 +495,31 @@
             };
             const handleTouchEnd = () => { touchStartIndex.current = null; setDraggedIdx(null); };
 
-            const handleCopySummary = () => {
+            // --- Copy & Print Exports ---
+            const generateWorkoutText = () => {
                 let text = `CIRCUIT WORKOUT SUMMARY (${rounds} ${rounds === 1 ? 'Round' : 'Rounds'})\n==========================================\n\n`;
-                categoryOrder.forEach((catKey, index) => {
-                    const catObj = CATEGORIES.find(c => c.key === catKey);
-                    if (!catObj) return;
-                    const data = workoutData[catKey];
-                    const name = data.exerciseName === 'Custom Exercise' && data.customExerciseName ? data.customExerciseName : data.exerciseName;
-                    const isMins = data.targetType === 'minutes';
-                    const perSideText = data.perSide ? ' (per side)' : '';
-                    const targetText = isMins ? `${data.targetValue} ${data.targetValue === '1' ? 'min' : 'mins'}${perSideText}` : `${data.targetValue} reps${perSideText}`;
-                    const isBodyweight = ['Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Incline', 'Decline'].includes(data.resistanceType);
-                    const hasWeight = !isBodyweight && data.resistanceWeightValue;
-                    const weightText = hasWeight ? ` (${data.resistanceWeightValue} ${data.resistanceLevel.includes('kg') ? 'kg' : 'lbs'})` : '';
-                    const resType = data.resistanceType ? ` [${data.resistanceType}]` : '';
+                stations.forEach((st, index) => {
+                    const movObj = MOVEMENT_TYPES.find(m => m.key === st.movementKey) || { title: st.movementKey };
+                    const name = st.exerciseName === 'Custom Exercise' && st.customExerciseName ? st.customExerciseName : st.exerciseName;
+                    const isMins = st.targetType === 'minutes';
+                    const perSideText = st.perSide ? ' (per side)' : '';
+                    const targetText = isMins ? `${st.targetValue} ${st.targetValue === '1' ? 'min' : 'mins'}${perSideText}` : `${st.targetValue} reps${perSideText}`;
+                    
+                    const resDetails = st.resistances.map(r => {
+                        const isWeightless = NO_WEIGHT_TYPES.includes(r.type);
+                        const weightStr = (!isWeightless && r.weight) ? ` (${r.weight} ${r.unit.includes('kg') ? 'kg' : 'lbs'})` : '';
+                        return `${r.type}${weightStr}`;
+                    }).join(' + ');
 
-                    text += `${index + 1}. ${catObj.title.toUpperCase()}: ${name}${resType}${weightText}\n   Target: ${targetText}\n`;
-                    if (data.notes) text += `   Notes: ${data.notes}\n`;
+                    text += `${index + 1}. ${movObj.title.toUpperCase()}: ${name}\n   Target: ${targetText}\n   Equipment: ${resDetails || 'Bodyweight'}\n`;
+                    if (st.notes) text += `   Notes: ${st.notes}\n`;
                     text += `\n`;
                 });
+                return text;
+            };
 
+            const handleCopySummary = () => {
+                const text = generateWorkoutText();
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
                 } else {
@@ -388,158 +535,295 @@
             };
 
             const handlePrintSummary = () => { window.print(); };
-            const toggleRoundCompletion = (roundNum) => setCompletedRounds(prev => ({ ...prev, [roundNum]: !prev[roundNum] }));
 
-            const renderStartScreen = () => (
-                <div className="flex flex-col items-center justify-center min-h-[75vh] text-center px-4">
-                    <div className="w-20 h-20 bg-orange-600/10 rounded-3xl border-2 border-orange-600/30 flex items-center justify-center mb-6 text-orange-500 shadow-xl">
-                        <Dumbbell size={42} />
-                    </div>
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-neutral-100 mb-2 tracking-tight">Circuit Workout Builder</h1>
-                    <p className="text-neutral-400 text-sm sm:text-base max-w-md mb-10">Customize your 5-station circuit step-by-step.</p>
+            // ================= SCREENS =================
 
-                    <div className="w-full max-w-sm bg-neutral-800/80 border border-neutral-700/80 rounded-2xl p-6 shadow-2xl mb-8">
-                        <label className="block text-neutral-200 text-base font-semibold mb-4">How many rounds?</label>
-                        <div className="flex items-center justify-center space-x-4">
-                            <button onClick={() => setRounds(prev => Math.max(1, prev - 1))} className="w-12 h-12 bg-neutral-700 hover:bg-neutral-600 text-neutral-100 rounded-xl font-bold text-2xl border border-neutral-600 flex items-center justify-center">-</button>
-                            <div className="w-24 bg-neutral-900 border-2 border-orange-600 rounded-xl py-2 flex flex-col items-center justify-center shadow-inner">
-                                <span className="text-3xl font-black text-orange-500">{rounds}</span>
-                                <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">{rounds === 1 ? 'Round' : 'Rounds'}</span>
-                            </div>
-                            <button onClick={() => setRounds(prev => Math.min(20, prev + 1))} className="w-12 h-12 bg-neutral-700 hover:bg-neutral-600 text-neutral-100 rounded-xl font-bold text-2xl border border-neutral-600 flex items-center justify-center">+</button>
-                        </div>
+            // 1. HOME SCREEN
+            const renderHomeScreen = () => (
+                <div className="flex flex-col items-center justify-center min-h-[80vh] text-center px-4 relative">
+                    <div className="absolute top-0 right-0 flex items-center space-x-2">
+                        <button onClick={() => setShowHelp(true)} className="p-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-2xl border border-neutral-700 transition" title="Help & Info">
+                            <HelpCircle size={22} />
+                        </button>
+                        <button onClick={() => setShowSettings(true)} className="p-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-2xl border border-neutral-700 transition" title="Settings">
+                            <Settings size={22} />
+                        </button>
                     </div>
 
-                    <button onClick={handleStartWorkout} className="w-full max-w-sm bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg py-4 px-8 rounded-2xl shadow-xl flex items-center justify-center space-x-3 cursor-pointer border border-orange-500/50">
-                        <span>Start Workout</span>
-                        <Play size={22} className="fill-current" />
+                    <div className="w-24 h-24 bg-orange-600/10 rounded-3xl border-2 border-orange-600/30 flex items-center justify-center mb-6 text-orange-500 shadow-2xl shadow-orange-950/40">
+                        <Dumbbell size={48} />
+                    </div>
+
+                    <h1 className="text-4xl sm:text-5xl font-black text-neutral-100 mb-3 tracking-tight">Circuit Builder</h1>
+                    <p className="text-neutral-400 text-base sm:text-lg max-w-sm mb-12">Design custom functional circuit workouts in seconds.</p>
+
+                    <button onClick={handleGoToRounds} className="w-full max-w-xs bg-orange-600 hover:bg-orange-500 text-white font-black text-xl py-5 px-8 rounded-2xl shadow-2xl shadow-orange-950/50 flex items-center justify-center space-x-3 transition active:scale-95 cursor-pointer border border-orange-500/50">
+                        <span>Build Workout</span>
+                        <ChevronRight size={24} />
                     </button>
                 </div>
             );
 
-            const renderExerciseBuilder = (stepIndex) => {
-                const categoryObj = CATEGORIES[stepIndex - 1];
-                const categoryKey = categoryObj.key;
-                const currentData = workoutData[categoryKey];
-                const IconComponent = categoryObj.icon;
-                const exerciseOptions = CATEGORY_EXERCISES[categoryKey];
-                const isCustom = currentData.exerciseName === 'Custom Exercise';
-                const isBodyweight = ['Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Incline', 'Decline'].includes(currentData.resistanceType);
+            // 2. ROUNDS SELECTOR SCREEN
+            const renderRoundsScreen = () => (
+                <div className="flex flex-col items-center justify-center min-h-[75vh] text-center px-4">
+                    <h2 className="text-3xl font-extrabold text-neutral-100 mb-2">How many rounds?</h2>
+                    <p className="text-neutral-400 text-sm mb-8">Choose how many times you will complete the circuit.</p>
+
+                    <div className="w-full max-w-xs bg-neutral-800/80 border border-neutral-700/80 rounded-2xl p-6 shadow-2xl mb-8 backdrop-blur-sm">
+                        <div className="flex items-center justify-center space-x-4">
+                            <button onClick={() => setRounds(prev => Math.max(1, prev - 1))} className="w-12 h-12 bg-neutral-700 hover:bg-neutral-600 text-neutral-100 rounded-xl font-bold text-2xl border border-neutral-600 flex items-center justify-center active:scale-95 transition">-</button>
+                            <div className="w-28 bg-neutral-900 border-2 border-orange-600 rounded-xl py-3 flex flex-col items-center justify-center shadow-inner">
+                                <span className="text-4xl font-black text-orange-500">{rounds}</span>
+                                <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mt-1">{rounds === 1 ? 'Round' : 'Rounds'}</span>
+                            </div>
+                            <button onClick={() => setRounds(prev => Math.min(30, prev + 1))} className="w-12 h-12 bg-neutral-700 hover:bg-neutral-600 text-neutral-100 rounded-xl font-bold text-2xl border border-neutral-600 flex items-center justify-center active:scale-95 transition">+</button>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3 w-full max-w-xs">
+                        <button onClick={() => setScreen('HOME')} className="px-5 py-4 bg-neutral-800 text-neutral-300 font-semibold text-base rounded-2xl border border-neutral-700">Back</button>
+                        <button onClick={handleStartBuilding} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg py-4 px-6 rounded-2xl shadow-xl flex items-center justify-center space-x-2 cursor-pointer border border-orange-500/50">
+                            <span>Start Building</span>
+                            <ChevronRight size={20} />
+                        </button>
+                    </div>
+                </div>
+            );
+
+            // 3. BUILDER SCREEN (STEPS)
+            const renderBuilderScreen = () => {
+                if (!currentStation) return null;
+                const movObj = MOVEMENT_TYPES.find(m => m.key === currentStation.movementKey) || MOVEMENT_TYPES[0];
+                const rawExercises = exerciseDb[currentStation.movementKey] || [];
+                const hiddenList = hiddenExercises[currentStation.movementKey] || [];
+                const availableExercises = rawExercises.filter(ex => !hiddenList.includes(ex));
+                const isCustomName = currentStation.exerciseName === 'Custom Exercise';
 
                 return (
-                    <div className="max-w-xl mx-auto py-2 px-1">
+                    <div className="max-w-xl mx-auto py-2 px-1" onTouchStart={handleBuilderTouchStart} onTouchEnd={handleBuilderTouchEnd}>
+                        {/* Step Navigation Header */}
                         <div className="flex items-center justify-between mb-6 pb-4 border-b border-neutral-800">
-                            <div className="flex items-center space-x-3">
-                                <div className="w-12 h-12 bg-orange-600/20 border border-orange-600/40 rounded-xl flex items-center justify-center text-orange-500 shadow-md">
-                                    <IconComponent size={24} />
-                                </div>
-                                <div>
-                                    <span className="text-xs font-bold uppercase tracking-wider text-orange-500 block">Step {stepIndex} of 5</span>
-                                    <h2 className="text-2xl font-black text-neutral-100 tracking-tight">{categoryObj.title}</h2>
-                                </div>
+                            <div>
+                                <span className="text-xs font-bold uppercase tracking-wider text-orange-500 block">
+                                    Station {activeStationIndex + 1} of {stations.length}
+                                </span>
+                                <h2 className="text-2xl font-black text-neutral-100 tracking-tight">Configure Exercise</h2>
                             </div>
-                            <span className="text-xs text-neutral-400 bg-neutral-800 px-3 py-1.5 rounded-full border border-neutral-700">{categoryObj.description}</span>
+                            <span className="text-xs text-neutral-400 bg-neutral-800 px-3 py-1.5 rounded-full border border-neutral-700 hidden sm:inline">
+                                Swipe left / right to navigate
+                            </span>
                         </div>
 
-                        <div className="space-y-5 bg-neutral-800/60 p-5 sm:p-6 rounded-2xl border border-neutral-700/70 shadow-2xl backdrop-blur-sm">
-                            <div>
-                                <label className="block text-sm font-semibold text-neutral-200 mb-2">Select Exercise</label>
-                                <select value={currentData.exerciseName} onChange={(e) => updateCategoryField(categoryKey, 'exerciseName', e.target.value)} className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-base rounded-xl p-3.5 focus:border-orange-500 focus:outline-none">
-                                    {exerciseOptions.map(ex => <option key={ex} value={ex}>{ex}</option>)}
-                                </select>
-                                {isCustom && (
-                                    <input type="text" placeholder="Enter custom exercise name" value={currentData.customExerciseName} onChange={(e) => updateCategoryField(categoryKey, 'customExerciseName', e.target.value)} className="w-full mt-3 bg-neutral-900 border-2 border-orange-600/60 text-neutral-100 text-sm rounded-xl p-3 focus:border-orange-500 focus:outline-none" />
+                        {/* Station Card Form */}
+                        <div className="space-y-5 bg-neutral-800/70 p-5 sm:p-6 rounded-2xl border border-neutral-700/80 shadow-2xl backdrop-blur-sm relative">
+                            {/* Station Action Toolbar */}
+                            <div className="flex items-center justify-between border-b border-neutral-700/60 pb-3">
+                                <div className="flex-grow mr-3">
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1">Movement Type</label>
+                                    <select
+                                        value={currentStation.movementKey}
+                                        onChange={(e) => {
+                                            const newKey = e.target.value;
+                                            const defaultEx = (exerciseDb[newKey] || [])[0] || 'Custom Exercise';
+                                            updateStation(currentStation.id, { movementKey: newKey, exerciseName: defaultEx });
+                                        }}
+                                        className="w-full bg-neutral-900 border-2 border-orange-600/70 text-orange-400 font-bold text-sm rounded-xl p-2.5 focus:outline-none"
+                                    >
+                                        {MOVEMENT_TYPES.map(m => <option key={m.key} value={m.key}>{m.title}</option>)}
+                                    </select>
+                                </div>
+                                {stations.length > 1 && (
+                                    <button onClick={() => removeStation(currentStation.id)} className="p-2.5 bg-neutral-900 hover:bg-red-950/80 text-red-400 rounded-xl border border-neutral-700 self-end" title="Delete Exercise Card">
+                                        <Trash2 size={18} />
+                                    </button>
                                 )}
                             </div>
 
+                            {/* Select Exercise */}
                             <div>
-                                <label className="block text-sm font-semibold text-neutral-200 mb-2">Type of Resistance</label>
-                                <select value={currentData.resistanceType} onChange={(e) => updateCategoryField(categoryKey, 'resistanceType', e.target.value)} className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-sm rounded-xl p-3.5 focus:border-orange-500 focus:outline-none">
-                                    {RESISTANCE_TYPE_OPTIONS.map(type => <option key={type} value={type}>{type}</option>)}
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="block text-sm font-semibold text-neutral-200">Select Exercise</label>
+                                    <button onClick={() => setShowCustomExModal(currentStation.movementKey)} className="text-xs text-orange-400 hover:text-orange-300 font-bold flex items-center space-x-1">
+                                        <Plus size={14} /><span>Add Custom Move</span>
+                                    </button>
+                                </div>
+                                <select
+                                    value={currentStation.exerciseName}
+                                    onChange={(e) => updateStation(currentStation.id, { exerciseName: e.target.value })}
+                                    className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-base rounded-xl p-3.5 focus:border-orange-500 focus:outline-none"
+                                >
+                                    {availableExercises.map(ex => <option key={ex} value={ex}>{ex}</option>)}
+                                    <option value="Custom Exercise">Custom Exercise...</option>
                                 </select>
+                                {isCustomName && (
+                                    <input
+                                        type="text"
+                                        placeholder="Enter custom exercise name"
+                                        value={currentStation.customExerciseName}
+                                        onChange={(e) => updateStation(currentStation.id, { customExerciseName: e.target.value })}
+                                        className="w-full mt-3 bg-neutral-900 border-2 border-orange-600/60 text-neutral-100 text-sm rounded-xl p-3 focus:border-orange-500 focus:outline-none"
+                                    />
+                                )}
                             </div>
 
-                            {!isBodyweight && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-sm font-semibold text-neutral-200 mb-2">Resistance Unit</label>
-                                        <select value={currentData.resistanceLevel} onChange={(e) => updateCategoryField(categoryKey, 'resistanceLevel', e.target.value)} className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-sm rounded-xl p-3.5 focus:border-orange-500 focus:outline-none">
-                                            {RESISTANCE_LEVEL_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold text-neutral-200 mb-2">Weight / Amount</label>
-                                        <input type="number" placeholder="e.g. 12.5" value={currentData.resistanceWeightValue} onChange={(e) => updateCategoryField(categoryKey, 'resistanceWeightValue', e.target.value)} className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-sm rounded-xl p-3.5 focus:border-orange-500 focus:outline-none" min="0" step="0.5" />
-                                    </div>
+                            {/* Stacked Resistances Section */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <label className="block text-sm font-semibold text-neutral-200">Type of Resistance</label>
+                                    <button onClick={() => addResistanceToStation(currentStation.id)} className="text-xs bg-orange-950/80 text-orange-400 border border-orange-800/60 hover:bg-orange-900 px-2.5 py-1 rounded-lg font-bold flex items-center space-x-1">
+                                        <Plus size={14} /><span>Add Resistance</span>
+                                    </button>
                                 </div>
-                            )}
 
+                                {currentStation.resistances.map((res, rIdx) => {
+                                    const isWeightless = NO_WEIGHT_TYPES.includes(res.type);
+                                    return (
+                                        <div key={res.id} className="p-3 bg-neutral-900/90 rounded-xl border border-neutral-700/80 space-y-3 relative">
+                                            <div className="flex items-center space-x-2">
+                                                <select
+                                                    value={res.type}
+                                                    onChange={(e) => updateResistanceInStation(currentStation.id, res.id, 'type', e.target.value)}
+                                                    className="flex-grow bg-neutral-950 border border-neutral-700 text-neutral-100 text-sm rounded-lg p-2.5 focus:border-orange-500 focus:outline-none"
+                                                >
+                                                    {RESISTANCE_TYPE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                                                </select>
+                                                {currentStation.resistances.length > 1 && (
+                                                    <button onClick={() => removeResistanceFromStation(currentStation.id, res.id)} className="p-2 text-neutral-400 hover:text-red-400">
+                                                        <X size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {!isWeightless && (
+                                                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-800">
+                                                    <div>
+                                                        <label className="block text-[11px] text-neutral-400 mb-1">Unit</label>
+                                                        <select
+                                                            value={res.unit}
+                                                            onChange={(e) => updateResistanceInStation(currentStation.id, res.id, 'unit', e.target.value)}
+                                                            className="w-full bg-neutral-950 border border-neutral-700 text-neutral-100 text-xs rounded-lg p-2 focus:border-orange-500 focus:outline-none"
+                                                        >
+                                                            {RESISTANCE_LEVEL_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[11px] text-neutral-400 mb-1">Weight / Amount</label>
+                                                        <input
+                                                            type="number"
+                                                            placeholder="e.g. 12.5"
+                                                            value={res.weight}
+                                                            onChange={(e) => updateResistanceInStation(currentStation.id, res.id, 'weight', e.target.value)}
+                                                            className="w-full bg-neutral-950 border border-neutral-700 text-neutral-100 text-xs rounded-lg p-2 focus:border-orange-500 focus:outline-none"
+                                                            min="0" step="0.5"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Target Metric */}
                             <div>
                                 <label className="block text-sm font-semibold text-neutral-200 mb-2">Target Metric</label>
                                 <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-900 rounded-xl border border-neutral-700 mb-4">
-                                    <button type="button" onClick={() => { updateCategoryField(categoryKey, 'targetType', 'reps'); updateCategoryField(categoryKey, 'targetValue', '10'); }} className={`py-2 px-3 rounded-lg text-sm font-bold flex items-center justify-center space-x-1.5 ${currentData.targetType === 'reps' ? 'bg-orange-600 text-white shadow-md' : 'text-neutral-400'}`}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { updateStation(currentStation.id, { targetType: 'reps', targetValue: '10' }); }}
+                                        className={`py-2 px-3 rounded-lg text-sm font-bold flex items-center justify-center space-x-1.5 ${currentStation.targetType === 'reps' ? 'bg-orange-600 text-white shadow-md' : 'text-neutral-400'}`}
+                                    >
                                         <Dumbbell size={16} /><span>Reps</span>
                                     </button>
-                                    <button type="button" onClick={() => { updateCategoryField(categoryKey, 'targetType', 'minutes'); updateCategoryField(categoryKey, 'targetValue', '1'); }} className={`py-2 px-3 rounded-lg text-sm font-bold flex items-center justify-center space-x-1.5 ${currentData.targetType === 'minutes' ? 'bg-orange-600 text-white shadow-md' : 'text-neutral-400'}`}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { updateStation(currentStation.id, { targetType: 'minutes', targetValue: '1' }); }}
+                                        className={`py-2 px-3 rounded-lg text-sm font-bold flex items-center justify-center space-x-1.5 ${currentStation.targetType === 'minutes' ? 'bg-orange-600 text-white shadow-md' : 'text-neutral-400'}`}
+                                    >
                                         <Clock size={16} /><span>Minutes</span>
                                     </button>
                                 </div>
 
-                                {currentData.targetType === 'reps' ? (
+                                {currentStation.targetType === 'reps' ? (
                                     <div className="flex items-center justify-center space-x-3 bg-neutral-900 p-3.5 rounded-xl border-2 border-neutral-700">
-                                        <button type="button" onClick={() => { const val = Math.max(1, (parseInt(currentData.targetValue, 10) || 10) - 1); updateCategoryField(categoryKey, 'targetValue', String(val)); }} className="w-11 h-11 bg-neutral-800 hover:bg-neutral-700 text-orange-500 font-bold text-2xl rounded-xl border border-neutral-600 flex items-center justify-center">-</button>
+                                        <button type="button" onClick={() => { const val = Math.max(1, (parseInt(currentStation.targetValue, 10) || 10) - 1); updateStation(currentStation.id, { targetValue: String(val) }); }} className="w-11 h-11 bg-neutral-800 hover:bg-neutral-700 text-orange-500 font-bold text-2xl rounded-xl border border-neutral-600 flex items-center justify-center">-</button>
                                         <div className="flex-grow max-w-[170px] text-center">
-                                            <input type="number" value={currentData.targetValue} onChange={(e) => updateCategoryField(categoryKey, 'targetValue', e.target.value)} min="1" max="500" className="w-full text-center bg-neutral-950 border-2 border-orange-600 text-orange-500 font-black text-2xl py-1.5 rounded-xl focus:outline-none" />
+                                            <input type="number" value={currentStation.targetValue} onChange={(e) => updateStation(currentStation.id, { targetValue: e.target.value })} min="1" max="500" className="w-full text-center bg-neutral-950 border-2 border-orange-600 text-orange-500 font-black text-2xl py-1.5 rounded-xl focus:outline-none" />
                                             <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block mt-1">Repetitions</span>
                                         </div>
-                                        <button type="button" onClick={() => { const val = (parseInt(currentData.targetValue, 10) || 0) + 1; updateCategoryField(categoryKey, 'targetValue', String(val)); }} className="w-11 h-11 bg-neutral-800 hover:bg-neutral-700 text-orange-500 font-bold text-2xl rounded-xl border border-neutral-600 flex items-center justify-center">+</button>
+                                        <button type="button" onClick={() => { const val = (parseInt(currentStation.targetValue, 10) || 0) + 1; updateStation(currentStation.id, { targetValue: String(val) }); }} className="w-11 h-11 bg-neutral-800 hover:bg-neutral-700 text-orange-500 font-bold text-2xl rounded-xl border border-neutral-600 flex items-center justify-center">+</button>
                                     </div>
                                 ) : (
-                                    <MinuteDialSelector value={currentData.targetValue} onChange={(newVal) => updateCategoryField(categoryKey, 'targetValue', newVal)} />
+                                    <MinuteDialSelector value={currentStation.targetValue} onChange={(newVal) => updateStation(currentStation.id, { targetValue: newVal })} />
                                 )}
                             </div>
 
+                            {/* Per Side Checkbox */}
                             <div>
                                 <label className="relative inline-flex items-center gap-2.5 cursor-pointer select-none text-xs font-bold uppercase tracking-wider text-neutral-200 bg-neutral-900 border border-neutral-700 px-3.5 py-2.5 rounded-xl">
-                                    <input type="checkbox" checked={!!currentData.perSide} onChange={(e) => updateCategoryField(categoryKey, 'perSide', e.target.checked)} className="w-4 h-4 accent-orange-600" />
+                                    <input type="checkbox" checked={!!currentStation.perSide} onChange={(e) => updateStation(currentStation.id, { perSide: e.target.checked })} className="w-4 h-4 accent-orange-600" />
                                     <span>Per side</span>
                                 </label>
                             </div>
 
+                            {/* Notes */}
                             <div>
                                 <label className="block text-sm font-semibold text-neutral-200 mb-2 flex items-center space-x-1.5"><FileText size={16} className="text-orange-500" /><span>Notes</span></label>
-                                <textarea rows={2} placeholder="Add variations or modifications e.g., assisted, modified angle, knee variation, or tempo..." value={currentData.notes} onChange={(e) => updateCategoryField(categoryKey, 'notes', e.target.value)} className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-sm rounded-xl p-3 focus:border-orange-500 focus:outline-none resize-none"></textarea>
+                                <textarea rows={2} placeholder="Add variations or modifications e.g., assisted, modified angle, knee variation, or tempo..." value={currentStation.notes} onChange={(e) => updateStation(currentStation.id, { notes: e.target.value })} className="w-full bg-neutral-900 border-2 border-neutral-700 text-neutral-100 text-sm rounded-xl p-3 focus:border-orange-500 focus:outline-none resize-none"></textarea>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between mt-6 space-x-3">
-                            <button onClick={handleBack} className="flex items-center space-x-1 px-5 py-3 bg-neutral-800 text-neutral-300 font-semibold text-sm rounded-xl border border-neutral-700"><ChevronLeft size={18} /><span>Back</span></button>
-                            <button onClick={handleNext} className="flex items-center space-x-2 px-7 py-3 bg-orange-600 text-white font-bold text-base rounded-xl border border-orange-500/50"><span>{stepIndex === 5 ? 'Begin Workout' : 'Next Step'}</span><ChevronRight size={18} /></button>
+                        {/* Add Exercise Card Button & Step Navigation */}
+                        <div className="mt-4 flex flex-col space-y-3">
+                            <button onClick={addStation} className="w-full py-3 bg-neutral-800 hover:bg-neutral-700 text-orange-400 font-bold text-sm rounded-xl border border-dashed border-orange-600/70 flex items-center justify-center space-x-2 transition">
+                                <Plus size={18} /><span>Add Another Exercise Card</span>
+                            </button>
+
+                            <div className="flex items-center justify-between space-x-3">
+                                <button onClick={() => activeStationIndex > 0 ? setActiveStationIndex(prev => prev - 1) : setScreen('ROUNDS_SELECT')} className="flex items-center space-x-1 px-5 py-3.5 bg-neutral-800 text-neutral-300 font-semibold text-sm rounded-xl border border-neutral-700">
+                                    <ChevronLeft size={18} /><span>Back</span>
+                                </button>
+                                {activeStationIndex < stations.length - 1 ? (
+                                    <button onClick={() => setActiveStationIndex(prev => prev + 1)} className="flex items-center space-x-2 px-7 py-3.5 bg-orange-600 text-white font-bold text-base rounded-xl border border-orange-500/50">
+                                        <span>Next Card</span><ChevronRight size={18} />
+                                    </button>
+                                ) : (
+                                    <button onClick={handleFinishBuilding} className="flex items-center space-x-2 px-7 py-3.5 bg-emerald-600 text-white font-bold text-base rounded-xl border border-emerald-500/50 shadow-lg">
+                                        <span>Begin Workout</span><ChevronRight size={18} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 );
             };
 
-            const renderWorkoutSummary = () => (
+            // 4. WORKOUT SUMMARY SCREEN
+            const renderSummaryScreen = () => (
                 <div className="max-w-2xl mx-auto py-2 px-1">
-                    <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-6 rounded-2xl shadow-xl mb-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-5 rounded-2xl shadow-xl mb-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
-                            <span className="text-xs font-black uppercase tracking-widest text-orange-200 block mb-1">Workout Circuit Ready</span>
+                            <span className="text-xs font-black uppercase tracking-widest text-orange-200 block mb-1">Active Workout Reference</span>
                             <h2 className="text-3xl font-black tracking-tight">{rounds} {rounds === 1 ? 'Round' : 'Rounds'} Circuit</h2>
-                            <p className="text-orange-100 text-xs sm:text-sm mt-1">Quick reference view. Drag or tap chevrons to reorder stations.</p>
                         </div>
-                        <div className="flex flex-row items-center gap-2 no-print flex-wrap sm:flex-nowrap">
-                            <button onClick={handleReset} className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-2.5 bg-neutral-900/80 text-neutral-100 font-semibold text-xs rounded-xl border border-neutral-700"><RotateCcw size={15} /><span>Start Over</span></button>
-                            <button onClick={handleCopySummary} className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-2.5 bg-neutral-900/80 text-neutral-100 font-semibold text-xs rounded-xl border border-neutral-700">{copied ? <Check size={15} className="text-emerald-400" /> : <Copy size={15} />}<span>{copied ? 'Copied!' : 'Copy'}</span></button>
-                            <button onClick={handlePrintSummary} className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-2.5 bg-neutral-900/80 text-neutral-100 font-semibold text-xs rounded-xl border border-neutral-700"><Printer size={15} /><span>Print / PDF</span></button>
+                        <div className="flex items-center space-x-2">
+                            <button onClick={handleResetAll} className="px-3.5 py-2.5 bg-neutral-900/80 text-neutral-100 font-semibold text-xs rounded-xl border border-neutral-700 flex items-center space-x-1">
+                                <RotateCcw size={14} /><span>Start Over</span>
+                            </button>
+                            <button onClick={() => setRounds(prev => prev + 1)} className="px-3.5 py-2.5 bg-neutral-900/90 text-amber-300 font-bold text-xs rounded-xl border border-amber-500/50 flex items-center space-x-1 shadow-lg">
+                                <Plus size={14} /><span>Add Round</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div className="bg-neutral-800/80 p-4 rounded-2xl border border-neutral-700/80 mb-6 no-print">
+                    {/* Round Tracker */}
+                    <div className="bg-neutral-800/80 p-4 rounded-2xl border border-neutral-700/80 mb-6">
                         <label className="block text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">Round Tracker</label>
                         <div className="flex flex-wrap gap-2">
                             {Array.from({ length: rounds }, (_, i) => i + 1).map(rNum => (
-                                <button key={rNum} onClick={() => toggleRoundCompletion(rNum)} className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition border ${completedRounds[rNum] ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400' : 'bg-neutral-900 border-neutral-700 text-neutral-300'}`}>
+                                <button key={rNum} onClick={() => setCompletedRounds(prev => ({ ...prev, [rNum]: !prev[rNum] }))} className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition border ${completedRounds[rNum] ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400' : 'bg-neutral-900 border-neutral-700 text-neutral-300'}`}>
                                     {completedRounds[rNum] ? <Check size={14} /> : <div className="w-3 h-3 rounded-full border border-neutral-500" />}
                                     <span>Round {rNum}</span>
                                 </button>
@@ -547,76 +831,246 @@
                         </div>
                     </div>
 
+                    {/* Station Cards */}
                     <div className="space-y-3 mb-8">
-                        {categoryOrder.map((catKey, index) => {
-                            const catObj = CATEGORIES.find(c => c.key === catKey);
-                            if (!catObj) return null;
-                            const data = workoutData[catKey];
-                            const name = data.exerciseName === 'Custom Exercise' && data.customExerciseName ? data.customExerciseName : data.exerciseName;
-                            const isMins = data.targetType === 'minutes';
-                            const perSideText = data.perSide ? ' / side' : '';
-                            const targetText = isMins ? `${data.targetValue} ${data.targetValue === '1' ? 'min' : 'mins'}${perSideText}` : `${data.targetValue} reps${perSideText}`;
-                            const isBodyweight = ['Bodyweight', 'Bodyweight (Incline)', 'Bodyweight (Decline)', 'Incline', 'Decline'].includes(data.resistanceType);
-                            const hasWeight = !isBodyweight && data.resistanceWeightValue;
-                            const weightText = hasWeight ? `${data.resistanceWeightValue} ${data.resistanceLevel.includes('kg') ? 'kg' : 'lbs'}` : null;
+                        {stations.map((st, index) => {
+                            const movObj = MOVEMENT_TYPES.find(m => m.key === st.movementKey) || { title: st.movementKey };
+                            const name = st.exerciseName === 'Custom Exercise' && st.customExerciseName ? st.customExerciseName : st.exerciseName;
+                            const isMins = st.targetType === 'minutes';
+                            const perSideText = st.perSide ? ' / side' : '';
+                            const targetText = isMins ? `${st.targetValue} ${st.targetValue === '1' ? 'min' : 'mins'}${perSideText}` : `${st.targetValue} reps${perSideText}`;
+
+                            const resistanceBadges = st.resistances.map(r => {
+                                const isWeightless = NO_WEIGHT_TYPES.includes(r.type);
+                                const weightStr = (!isWeightless && r.weight) ? ` (${r.weight}${r.unit.includes('kg') ? 'kg' : 'lbs'})` : '';
+                                return `${r.type}${weightStr}`;
+                            });
 
                             return (
-                                <div key={catKey} data-station-index={index} draggable onDragStart={(e) => handleDragStart(e, index)} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, index)} className={`bg-neutral-800/90 border rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${draggedIdx === index ? 'opacity-40 border-dashed border-orange-500' : 'border-neutral-700/80'}`}>
+                                <div key={st.id} data-station-index={index} draggable onDragStart={(e) => handleDragStart(e, index)} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, index)} className={`bg-neutral-800/90 border rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${draggedIdx === index ? 'opacity-40 border-dashed border-orange-500' : 'border-neutral-700/80'}`}>
                                     <div className="flex items-start space-x-3 w-full sm:w-auto">
-                                        <div className="flex flex-col items-center justify-center space-y-1 pr-1 text-neutral-500 no-print self-center">
+                                        <div className="flex flex-col items-center justify-center space-y-1 pr-1 text-neutral-500 self-center">
                                             <button type="button" onClick={() => moveStation(index, -1)} disabled={index === 0} className="p-1 hover:text-orange-400 disabled:opacity-20"><ArrowUp size={14} /></button>
                                             <div onTouchStart={(e) => handleTouchStart(e, index)} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="cursor-grab p-1 hover:text-orange-400 touch-none"><GripVertical size={18} /></div>
-                                            <button type="button" onClick={() => moveStation(index, 1)} disabled={index === categoryOrder.length - 1} className="p-1 hover:text-orange-400 disabled:opacity-20"><ArrowDown size={14} /></button>
+                                            <button type="button" onClick={() => moveStation(index, 1)} disabled={index === stations.length - 1} className="p-1 hover:text-orange-400 disabled:opacity-20"><ArrowDown size={14} /></button>
                                         </div>
                                         <div className="w-9 h-9 rounded-xl bg-orange-600/20 border border-orange-600/30 text-orange-500 flex items-center justify-center font-black text-sm flex-shrink-0 mt-0.5">{index + 1}</div>
                                         <div className="flex-grow">
-                                            <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                                                <span className="text-[11px] font-bold uppercase text-orange-500 bg-orange-950/60 px-2 py-0.5 rounded border border-orange-800/50">{catObj.title}</span>
-                                                {data.resistanceType && <span className="text-[11px] text-neutral-400 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-700">{data.resistanceType}</span>}
-                                                {data.perSide && <span className="text-[11px] font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/50">Per Side</span>}
+                                            <div className="flex items-center space-x-2 flex-wrap gap-1">
+                                                <span className="text-[11px] font-bold uppercase text-orange-500 bg-orange-950/60 px-2 py-0.5 rounded border border-orange-800/50">{movObj.title}</span>
+                                                {resistanceBadges.map((badge, bIdx) => (
+                                                    <span key={bIdx} className="text-[11px] text-neutral-300 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-700">{badge}</span>
+                                                ))}
+                                                {st.perSide && <span className="text-[11px] font-bold text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/50">Per Side</span>}
                                             </div>
-                                            <h3 className="text-xl font-extrabold text-neutral-100 mt-1">{name}</h3>
-                                            {data.notes && <p className="text-xs text-neutral-400 mt-1 italic"><span>Note: </span><span className="text-neutral-300">{data.notes}</span></p>}
+
+                                            <div className="flex items-center space-x-2 mt-1">
+                                                <h3 className="text-xl font-extrabold text-neutral-100">{name}</h3>
+                                                <button onClick={() => setQuickEditStation(st)} className="text-neutral-500 hover:text-orange-400 p-1" title="Quick Edit Exercise">
+                                                    <Edit3 size={16} />
+                                                </button>
+                                            </div>
+
+                                            {/* Mid-workout note area */}
+                                            {editingStationNotes === st.id ? (
+                                                <div className="mt-2 flex items-center space-x-2">
+                                                    <input
+                                                        type="text"
+                                                        value={st.notes}
+                                                        onChange={(e) => updateStation(st.id, { notes: e.target.value })}
+                                                        placeholder="Add mid-workout note..."
+                                                        className="bg-neutral-950 border border-orange-600 text-xs text-neutral-100 rounded-lg p-2 flex-grow focus:outline-none"
+                                                    />
+                                                    <button onClick={() => setEditingStationNotes(null)} className="p-1.5 bg-orange-600 text-white rounded-lg text-xs font-bold">Done</button>
+                                                </div>
+                                            ) : (
+                                                <p onClick={() => setEditingStationNotes(st.id)} className="text-xs text-neutral-400 mt-1 italic cursor-pointer hover:text-orange-300">
+                                                    <span>Note: </span>
+                                                    <span className="text-neutral-300">{st.notes || 'Tap to add mid-workout note...'}</span>
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
-                                    <div className="w-full sm:w-auto flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 border-neutral-700/60 pt-2 sm:pt-0 mt-1 sm:mt-0">
+
+                                    <div className="w-full sm:w-auto flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 border-neutral-700/60 pt-2 sm:pt-0">
                                         <div className="bg-neutral-900 border-2 border-orange-600/80 px-4 py-2 rounded-xl text-center"><span className="text-lg font-black text-orange-500 block">{targetText}</span></div>
-                                        {weightText && <span className="text-xs font-semibold text-neutral-400 mt-1">{weightText}</span>}
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
 
-                    <div className="flex justify-center pb-8 no-print">
-                        <button onClick={() => setCurrentStep(1)} className="flex items-center space-x-2 px-6 py-3 bg-neutral-800 text-neutral-200 font-bold text-sm rounded-xl border border-neutral-700"><Edit3 size={16} /><span>Edit Circuit Exercises</span></button>
+                    <div className="flex items-center justify-between pb-8 space-x-3">
+                        <button onClick={() => { setActiveStationIndex(0); setScreen('BUILDER'); }} className="flex items-center space-x-2 px-5 py-3.5 bg-neutral-800 text-neutral-200 font-bold text-sm rounded-xl border border-neutral-700">
+                            <Edit3 size={16} /><span>Edit Circuit</span>
+                        </button>
+
+                        <button onClick={handleCompleteWorkout} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-base py-3.5 px-6 rounded-xl shadow-xl flex items-center justify-center space-x-2 border border-emerald-500/50">
+                            <Trophy size={20} /><span>Complete Workout</span>
+                        </button>
                     </div>
                 </div>
+            );
+
+            // 5. WORKOUT CELEBRATION SCREEN
+            const renderCelebrationScreen = () => (
+                <div className="flex flex-col items-center justify-center min-h-[75vh] text-center px-4 py-6">
+                    <div className="w-24 h-24 bg-emerald-600/20 border-2 border-emerald-500/50 rounded-full flex items-center justify-center text-emerald-400 mb-6 shadow-2xl animate-bounce">
+                        <Trophy size={48} />
+                    </div>
+
+                    <span className="text-xs font-black uppercase tracking-widest text-emerald-400 block mb-1">Workout Complete</span>
+                    <h2 className="text-4xl sm:text-5xl font-black text-neutral-100 mb-2">Great Job!</h2>
+                    <p className="text-neutral-400 text-base max-w-md mb-8">You successfully finished all {rounds} rounds of your custom circuit session.</p>
+
+                    <div className="flex items-center justify-center space-x-3 mb-10 w-full max-w-sm">
+                        <button onClick={handleCopySummary} className="flex-1 flex items-center justify-center space-x-2 px-4 py-3.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-bold text-sm rounded-2xl border border-neutral-700 transition">
+                            {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
+                            <span>{copied ? 'Copied Summary!' : 'Copy Summary'}</span>
+                        </button>
+                        <button onClick={handlePrintSummary} className="flex-1 flex items-center justify-center space-x-2 px-4 py-3.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-bold text-sm rounded-2xl border border-neutral-700 transition">
+                            <Printer size={18} />
+                            <span>Print / PDF</span>
+                        </button>
+                    </div>
+
+                    <button onClick={handleResetAll} className="w-full max-w-xs bg-orange-600 hover:bg-orange-500 text-white font-black text-lg py-4 px-8 rounded-2xl shadow-xl flex items-center justify-center space-x-2 border border-orange-500/50">
+                        <RotateCcw size={20} /><span>Start New Workout</span>
+                    </button>
+                </div>
+            );
+
+            // --- MODALS ---
+            const renderModals = () => (
+                <>
+                    {/* Settings Modal */}
+                    {showSettings && (
+                        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-neutral-800 border border-neutral-700 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                                <div className="flex items-center justify-between border-b border-neutral-700 pb-3">
+                                    <h3 className="text-xl font-bold text-neutral-100 flex items-center space-x-2"><Settings size={20} className="text-orange-500" /><span>Settings</span></h3>
+                                    <button onClick={() => setShowSettings(false)} className="text-neutral-400 hover:text-white"><X size={20} /></button>
+                                </div>
+                                <div className="space-y-3 text-sm text-neutral-300">
+                                    <p>App Data & Preferences are automatically stored locally on your device.</p>
+                                    <button onClick={() => { localStorage.removeItem(STORAGE_KEY); window.location.reload(); }} className="w-full py-2.5 bg-red-950/80 hover:bg-red-900 text-red-300 font-bold rounded-xl border border-red-800/50">Reset All Stored App Data</button>
+                                </div>
+                                <button onClick={() => setShowSettings(false)} className="w-full py-2.5 bg-neutral-700 text-white font-bold rounded-xl">Close</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Help Modal */}
+                    {showHelp && (
+                        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-neutral-800 border border-neutral-700 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                                <div className="flex items-center justify-between border-b border-neutral-700 pb-3">
+                                    <h3 className="text-xl font-bold text-neutral-100 flex items-center space-x-2"><HelpCircle size={20} className="text-orange-500" /><span>Help & Guide</span></h3>
+                                    <button onClick={() => setShowHelp(false)} className="text-neutral-400 hover:text-white"><X size={20} /></button>
+                                </div>
+                                <div className="space-y-2 text-xs sm:text-sm text-neutral-300">
+                                    <p>1. Tap <strong>Build Workout</strong> and select total circuit rounds.</p>
+                                    <p>2. Customize exercises, stacked resistances, targets, and notes for each station.</p>
+                                    <p>3. Swipe left/right or tap <strong>Add Another Exercise Card</strong> to expand your workout.</p>
+                                    <p>4. Refer to the Summary screen mid-workout, check off completed rounds, or make quick edits on the fly.</p>
+                                </div>
+                                <button onClick={() => setShowHelp(false)} className="w-full py-2.5 bg-neutral-700 text-white font-bold rounded-xl">Got It</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Add Custom Exercise Modal */}
+                    {showCustomExModal && (
+                        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-neutral-800 border border-neutral-700 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                                <h3 className="text-lg font-bold text-neutral-100">Add Custom Exercise</h3>
+                                <input
+                                    type="text"
+                                    placeholder="Exercise Name (e.g. Weighted Pistol Squats)"
+                                    value={newCustomExName}
+                                    onChange={(e) => setNewCustomExName(e.target.value)}
+                                    className="w-full bg-neutral-900 border-2 border-orange-600 text-neutral-100 text-sm rounded-xl p-3 focus:outline-none"
+                                />
+                                <div className="flex space-x-2 pt-2">
+                                    <button onClick={() => setShowCustomExModal(null)} className="flex-1 py-2.5 bg-neutral-700 text-neutral-300 font-bold rounded-xl">Cancel</button>
+                                    <button onClick={() => handleAddCustomExercise(showCustomExModal)} className="flex-1 py-2.5 bg-orange-600 text-white font-bold rounded-xl">Save Move</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Quick Edit Station Modal */}
+                    {quickEditStation && (
+                        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-neutral-800 border border-neutral-700 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                                <div className="flex items-center justify-between border-b border-neutral-700 pb-2">
+                                    <h3 className="text-lg font-bold text-neutral-100">Quick Edit Station</h3>
+                                    <button onClick={() => setQuickEditStation(null)} className="text-neutral-400 hover:text-white"><X size={20} /></button>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase text-neutral-400 mb-1">Target Value</label>
+                                    <input
+                                        type="number"
+                                        value={quickEditStation.targetValue}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setQuickEditStation(prev => ({ ...prev, targetValue: val }));
+                                            updateStation(quickEditStation.id, { targetValue: val });
+                                        }}
+                                        className="w-full bg-neutral-900 border border-orange-600 text-orange-400 font-black text-xl p-3 rounded-xl text-center"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase text-neutral-400 mb-1">Notes</label>
+                                    <textarea
+                                        rows={2}
+                                        value={quickEditStation.notes}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setQuickEditStation(prev => ({ ...prev, notes: val }));
+                                            updateStation(quickEditStation.id, { notes: val });
+                                        }}
+                                        className="w-full bg-neutral-900 border border-neutral-700 text-neutral-100 text-sm p-3 rounded-xl resize-none"
+                                    ></textarea>
+                                </div>
+                                <button onClick={() => setQuickEditStation(null)} className="w-full py-3 bg-orange-600 text-white font-bold rounded-xl">Done</button>
+                            </div>
+                        </div>
+                    )}
+                </>
             );
 
             return (
                 <div className="min-h-screen bg-neutral-900 text-neutral-100 font-sans flex flex-col justify-between">
                     <header className="bg-neutral-950/80 border-b border-neutral-800/80 px-4 py-3 sticky top-0 z-30 backdrop-blur-md no-print">
                         <div className="max-w-3xl mx-auto flex items-center justify-between">
-                            <div onClick={handleReset} className="flex items-center space-x-2 cursor-pointer group">
-                                <div className="w-7 h-7 bg-orange-600 rounded-lg flex items-center justify-center text-white font-black text-xs">C</div>
-                                <span className="font-extrabold text-neutral-100 text-sm tracking-tight group-hover:text-orange-500">Circuit Builder</span>
+                            <div onClick={() => setScreen('HOME')} className="flex items-center space-x-2 cursor-pointer group">
+                                <div className="w-7 h-7 bg-orange-600 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md">C</div>
+                                <span className="font-extrabold text-neutral-100 text-sm tracking-tight group-hover:text-orange-500 transition">Circuit Builder</span>
                             </div>
-                            {currentStep >= 1 && currentStep <= 5 && (
+                            {screen === 'BUILDER' && (
                                 <div className="flex items-center space-x-1.5">
-                                    {[1, 2, 3, 4, 5].map(s => <div key={s} className={`h-2 rounded-full transition-all ${s === currentStep ? 'w-6 bg-orange-600' : s < currentStep ? 'w-2 bg-orange-900/80' : 'w-2 bg-neutral-800'}`} />)}
+                                    {stations.map((st, idx) => (
+                                        <div key={st.id} onClick={() => setActiveStationIndex(idx)} className={`h-2 rounded-full cursor-pointer transition-all ${idx === activeStationIndex ? 'w-6 bg-orange-600' : 'w-2 bg-neutral-800'}`} />
+                                    ))}
                                 </div>
                             )}
                         </div>
                     </header>
 
                     <main className="flex-grow px-4 py-6">
-                        {currentStep === 0 && renderStartScreen()}
-                        {currentStep >= 1 && currentStep <= 5 && renderExerciseBuilder(currentStep)}
-                        {currentStep === 6 && renderWorkoutSummary()}
+                        {screen === 'HOME' && renderHomeScreen()}
+                        {screen === 'ROUNDS_SELECT' && renderRoundsScreen()}
+                        {screen === 'BUILDER' && renderBuilderScreen()}
+                        {screen === 'SUMMARY' && renderSummaryScreen()}
+                        {screen === 'CELEBRATION' && renderCelebrationScreen()}
                     </main>
 
-                    <footer className="py-4 border-t border-neutral-800/50 text-center text-xs text-neutral-500 no-print">Functional Circuit Prototype</footer>
+                    {renderModals()}
+
+                    <footer className="py-4 border-t border-neutral-800/50 text-center text-xs text-neutral-500 no-print">
+                        Circuit Builder Pro
+                    </footer>
                 </div>
             );
         }
